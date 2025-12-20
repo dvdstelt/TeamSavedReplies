@@ -9,7 +9,10 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "{15e48600-9a54-4abd-94bd-407a2551c976}",
-      "strict_min_version": "121.0"
+      "strict_min_version": "140.0",
+      "data_collection_permissions":{
+        "required":["none"]
+      }
     }
   },
   "background": {
@@ -49,7 +52,6 @@
         "js/urls.js",
         "js/events.js",
         "js/can-load-saved-replies.js",
-        "js/saved-replies-sidepanel-toggle-button.js",
         "pages/content-script/content-script-copy-saved-reply-element.js",
         "pages/content-script/content-script-messaging.js",
         "pages/content-script/content-script-urls.js",
