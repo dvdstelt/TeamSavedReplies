@@ -1,186 +1,295 @@
-const getsSavedRepliesForNestedIssuesContainer = () =>
-     document.querySelector(`#__primerPortalRoot__  div[role="listbox"] > div`);
+const SHARED_REPLY_ATTR = "data-shared-saved-reply";
+const SHARED_LISTBOX_ATTR = "data-shared-saved-reply-listbox";
+let _cachedSavedReplies = null;
+let _cachedTemplateItem = null;
+let _cachedListboxClone = null;
+let _dialogObserverActive = false;
 
-const getLastExistingSavedReplyElement = (savedRepliesContainer) => {
-    
-    let savedReplyElements = 
-        savedRepliesContainer.querySelectorAll(`div[tabindex="-1"][role="option"]`);
+const isSavedRepliesDialog = (element) => {
+    if (!element || !element.querySelector) return false;
+    return element.querySelector('input[placeholder="Search saved replies"]') !== null;
+};
 
-     let lastSavedReplyElement = savedReplyElements[savedReplyElements.length- 1]
+const matchesSearch = (reply, searchText) => {
+    if (!searchText) return true;
+    return reply.name.toLowerCase().includes(searchText);
+};
 
-     return lastSavedReplyElement;
-}
-   
-const calculateSavedReplyId = (lastId, savedReplyIndex) => {
-   
-   let numberIndex = lastId.search(`[0-9]`);
-   
-   if(numberIndex !== -1){
-      
-      let lastIdNumber = Number(lastId.substring(numberIndex)); 
-      
-      let newNumericalId = lastIdNumber + savedReplyIndex + 1;
+const insertReplyIntoTextarea = (body) => {
+    const textarea = document.querySelector(
+        'textarea[name="comment[body]"], div[data-testid="markdown-editor-comment-composer"] textarea, textarea[class*="prc-Textarea-TextArea"]'
+    );
+    if (!textarea) return;
 
-      let idPrefix = lastId.substring(0, numberIndex);
-      
-      let newId = idPrefix + new String(newNumericalId);
-      
-      return newId;
-   }
-   else{
-        
-        return lastId;
-   }
-}
+    textarea.focus();
 
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = textarea.value;
+    const newValue = currentValue.substring(0, start) + body + currentValue.substring(end);
 
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype, 'value'
+    ).set;
 
-const setElementSavedReplyName = (element, name) =>{
+    nativeInputValueSetter.call(textarea, newValue);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-    element.setAttribute(`saved-reply-name`, name);
-}
+    const newCursorPos = start + body.length;
+    textarea.setSelectionRange(newCursorPos, newCursorPos);
+};
 
+const closeSavedRepliesDialog = () => {
+    const target = document.activeElement || document.body;
+    target.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Escape',
+        code: 'Escape',
+        keyCode: 27,
+        which: 27,
+        bubbles: true,
+        cancelable: true
+    }));
+};
 
-const setSavedReplyId = (element,calculatedId) => {
- 
-    element.id = calculatedId;
-}
+const ACTIVE_ATTR = "data-shared-active";
 
-const setSavedReplyName = (nameSpan, name) => {
-     
-    nameSpan.innerText = name;
-}
+const createReplyListItem = (templateItem, reply, index) => {
+    const item = templateItem.cloneNode(true);
 
+    item.setAttribute(SHARED_REPLY_ATTR, "true");
 
-const encodeSavedReplyBody = (body) => {
-   
-   let updatedBody = 
-        body.replace(/\r\n/gi, '\\uFFFD')
-            .replace(/\n/gi,'\\uFFFD');
+    const baseId = `shared-reply-${index}`;
+    item.id = baseId;
+    item.setAttribute("data-id", `shared-${index}`);
+    item.removeAttribute("data-first-child");
+    item.removeAttribute("aria-current");
+    item.removeAttribute("data-is-active-descendant");
+    item.setAttribute("aria-selected", "false");
+    item.setAttribute("aria-labelledby", `${baseId}--label`);
+    item.setAttribute("aria-describedby", `${baseId}--block-description`);
 
-   return updatedBody;
-}
-
-const setSavedReplyBody = (bodySpan, body) => {
-
-    let encodedBody = encodeSavedReplyBody(body);
-
-    bodySpan.innerText = encodedBody;
-}
-
-const createNewSavedReplyElementFromExistingElment = (templateElement, savedReply, index) => {
-
-    let spans = templateElement.querySelectorAll(`span`);
-    console.log("bodyspan", spans[1]);
-    console.log("bodyspanInnerText", spans[1].innerText);
-    console.log("savereplybody", savedReply.body);
-
-    let newSavedReplyElement = templateElement.cloneNode(true);
-    
-    let savedReplySpans = newSavedReplyElement.querySelectorAll(`span`);
-
-    let nameSpan = savedReplySpans[0];
-
-    let bodySpan = savedReplySpans[1];
-
-    setElementSavedReplyName(newSavedReplyElement, savedReply.name);
-
-    setSavedReplyName(nameSpan, savedReply.name);
-
-    setSavedReplyBody(bodySpan, savedReply.body);
-
-    let id = calculateSavedReplyId(templateElement.id, index);
-
-    setSavedReplyId(newSavedReplyElement, id);
-
-    return newSavedReplyElement;
-}
-
-const createSavedRepliesUIForNestedIssues = (savedReplies) => {
-
-    let savedRepliesDivs = [];
-
-    let savedRepliesContainer = getsSavedRepliesForNestedIssuesContainer();
-
-    let lastSavedReplyElement = getLastExistingSavedReplyElement(savedRepliesContainer);
-  
-    for (const [index, reply] of savedReplies.entries()){
-
-        let newElement = 
-            createNewSavedReplyElementFromExistingElment(lastSavedReplyElement, reply, index);
-
-        savedRepliesDivs.push(newElement);
+    // Hide the checkmark SVG but keep the selection span for indentation and blue bar
+    const checkmark = item.querySelector('[data-component="ActionList.Selection"] svg');
+    if (checkmark) {
+        checkmark.style.visibility = "hidden";
     }
 
-    return savedRepliesDivs;
-}
 
-const addNewSavedReplyElementToContainer = (savedRepliesContainer,savedReplyElement ) => {
-    
-    savedRepliesContainer.appendChild(savedReplyElement);
-}
+    const labelSpan = item.querySelector('[id$="--label"]');
+    if (labelSpan) {
+        labelSpan.id = `${baseId}--label`;
+        labelSpan.textContent = reply.name;
+    }
 
-const getElementSavedReplyName = (element) =>{
+    const descSpan = item.querySelector('[data-component="ActionList.Description"]');
+    if (descSpan) {
+        descSpan.id = `${baseId}--block-description`;
+        descSpan.textContent = reply.body;
+    }
 
-    return element.getAttribute(`saved-reply-name`);
-}
+    const trailingVisual = item.querySelector('[id$="--trailing-visual"]');
+    if (trailingVisual) {
+        trailingVisual.id = `${baseId}--trailing-visual`;
+        trailingVisual.textContent = "";
+    }
 
-const getSavedReplyTitleSpan = (savedReplyDiv) => {
-
-}
-
-const getSavedReplyTemplateString = (savedReplyDiv) =>{
-    
-    let bodySpan = savedReplyDiv.querySelectorAll(`span`)[1]
-    
-    let decodedTemplate = bodySpan.innerText
-        .replace(/(\\uFFFD)+/gi,'<br />');
-
-    return decodedTemplate;
-}
-
-const addEventListenerToSavedReplyDiv = (savedReplyDiv, textAreaElement) =>{
-    
-    let templateString = getSavedReplyTemplateString(savedReplyDiv, textAreaElement);
-       
-    savedReplyDiv.addEventListener(`click`, function(e){
-
-        textAreaElement.innerHtml = templateString;
-
-        console.log("text area value", textAreaElement.value);
-
+    item.addEventListener("mouseenter", () => {
+        const listbox = item.closest('ul[role="listbox"]');
+        listbox?.querySelectorAll("[data-is-active-descendant]").forEach(el => {
+            el.removeAttribute("data-is-active-descendant");
+            el.removeAttribute(ACTIVE_ATTR);
+            el.style.backgroundColor = "";
+        });
+        item.setAttribute("data-is-active-descendant", "true");
+        item.setAttribute(ACTIVE_ATTR, "true");
+        if (listbox) listbox.setAttribute("data-has-active-descendant", item.id);
+    });
+    item.addEventListener("mouseleave", () => {
+        item.removeAttribute("data-is-active-descendant");
+        item.removeAttribute(ACTIVE_ATTR);
+        const listbox = item.closest('ul[role="listbox"]');
+        if (listbox) listbox.removeAttribute("data-has-active-descendant");
     });
 
-}
+    item.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        insertReplyIntoTextarea(reply.body);
+        closeSavedRepliesDialog();
+    });
 
-const getCommentTextAreaElement = () => {
+    return item;
+};
 
-    let textAreaElement =
-    document.querySelector(
-        `div[data-testid="markdown-editor-comment-composer"] textarea`);
+const injectSharedReplies = (listbox, savedReplies, searchText) => {
+    listbox.querySelectorAll(`[${SHARED_REPLY_ATTR}]`).forEach(el => el.remove());
 
-    return textAreaElement;
-}
+    const nativeItem = listbox.querySelector(`li[role="option"]:not([${SHARED_REPLY_ATTR}])`);
+    if (nativeItem) {
+        _cachedTemplateItem = nativeItem.cloneNode(true);
+    }
 
-const addNewSavedRepliesToNestedIssuesContainer = (savedRepliesDivs, savedRepliesContainer) =>{
-   
-    let textAreaElement = getCommentTextAreaElement();
+    if (!_cachedTemplateItem) return;
 
-    for (const savedReplyDiv of savedRepliesDivs){
+    const filteredReplies = savedReplies.filter(r => matchesSearch(r, searchText));
 
-        let savedReplyName = savedReplyDiv.getAttribute(`saved-reply-name`);
+    for (const [index, reply] of filteredReplies.entries()) {
+        const item = createReplyListItem(_cachedTemplateItem, reply, index);
+        listbox.appendChild(item);
+    }
+};
 
-        let matchingDiv = savedRepliesContainer.querySelector(`div[saved-reply-name="${savedReplyName}"]`);
+const getOrCreateListbox = (dialog) => {
+    const previouslyCreated = dialog.querySelector(`[${SHARED_LISTBOX_ATTR}]`);
 
-        if(!matchingDiv){
-
-            addEventListenerToSavedReplyDiv(savedReplyDiv, textAreaElement);
-
-            savedRepliesContainer.appendChild(savedReplyDiv);
+    const existingListbox = dialog.querySelector(`ul[role="listbox"]:not([${SHARED_LISTBOX_ATTR}])`);
+    if (existingListbox) {
+        if (previouslyCreated) {
+            previouslyCreated.remove();
         }
-     }
-}
+        return existingListbox;
+    }
 
-const removeNewSavedRepliesToNestedIssuesContainer = () =>{
-    
-}
+    if (!_cachedListboxClone) return null;
+
+    const container = dialog.querySelector('[data-testid="filtered-action-list"] > div:last-child')
+        || dialog.querySelector('[data-testid="filtered-action-list"]');
+    if (!container) return null;
+
+    if (previouslyCreated) {
+        return previouslyCreated;
+    }
+
+    const listbox = _cachedListboxClone.cloneNode(false);
+    listbox.setAttribute(SHARED_LISTBOX_ATTR, "true");
+    container.prepend(listbox);
+
+    return listbox;
+};
+
+const hideNoItemsMessage = (dialog, hide) => {
+    const message = dialog.querySelector('[class*="SelectPanel-Message"]');
+    if (message) {
+        message.style.display = hide ? "none" : "";
+    }
+};
+
+const injectIntoCurrentListbox = (dialog, searchText) => {
+    const listbox = getOrCreateListbox(dialog);
+    if (!listbox) return;
+
+    injectSharedReplies(listbox, _cachedSavedReplies, searchText);
+
+    const hasSharedItems = listbox.querySelector(`[${SHARED_REPLY_ATTR}]`) !== null;
+    hideNoItemsMessage(dialog, hasSharedItems);
+};
+
+const onSavedRepliesDialogOpened = async (dialog) => {
+    if (!_cachedSavedReplies) {
+        _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
+    }
+
+    if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) return;
+
+    const initialInject = () => {
+        const listbox = dialog.querySelector('ul[role="listbox"]');
+        if (!listbox) return false;
+
+        _cachedListboxClone = listbox.cloneNode(false);
+        _cachedListboxClone.removeAttribute("data-has-active-descendant");
+
+        injectSharedReplies(listbox, _cachedSavedReplies, "");
+
+        dialog.addEventListener("input", (e) => {
+            if (!e.target.matches('input[placeholder="Search saved replies"]')) return;
+            const searchText = e.target.value.toLowerCase();
+            setTimeout(() => injectIntoCurrentListbox(dialog, searchText), 0);
+        });
+
+        dialog.addEventListener("keydown", (e) => {
+            if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Enter") return;
+
+            const currentListbox = getOrCreateListbox(dialog);
+            if (!currentListbox) return;
+
+            const hasNativeItems = currentListbox.querySelector(`li[role="option"]:not([${SHARED_REPLY_ATTR}])`);
+            if (hasNativeItems) return;
+
+            const items = Array.from(currentListbox.querySelectorAll(`[${SHARED_REPLY_ATTR}]`));
+            if (items.length === 0) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const selectedIndex = items.findIndex(item => item.hasAttribute(ACTIVE_ATTR));
+
+            if (e.key === "Enter") {
+                if (selectedIndex >= 0) {
+                    items[selectedIndex].click();
+                }
+                return;
+            }
+
+            let nextIndex;
+            if (e.key === "ArrowDown") {
+                nextIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+            } else {
+                nextIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+            }
+
+            items.forEach(item => {
+                item.removeAttribute(ACTIVE_ATTR);
+                item.removeAttribute("data-is-active-descendant");
+                item.style.backgroundColor = "";
+            });
+            items[nextIndex].setAttribute(ACTIVE_ATTR, "true");
+            items[nextIndex].setAttribute("data-is-active-descendant", "true");
+            items[nextIndex].style.backgroundColor = "var(--control-transparent-bgColor-hover, rgba(175,184,193,0.12))";
+            currentListbox.setAttribute("data-has-active-descendant", items[nextIndex].id);
+            items[nextIndex].scrollIntoView({ block: "nearest" });
+        });
+
+        return true;
+    };
+
+    if (initialInject()) return;
+
+    const dialogObserver = new MutationObserver(() => {
+        if (initialInject()) {
+            dialogObserver.disconnect();
+        }
+    });
+    dialogObserver.observe(dialog, { childList: true, subtree: true });
+};
+
+const observeSavedRepliesDialog = () => {
+    if (_dialogObserverActive) return;
+    _dialogObserverActive = true;
+
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node.nodeType !== Node.ELEMENT_NODE) continue;
+
+                let dialog = null;
+                if (node.getAttribute && node.getAttribute('role') === 'dialog') {
+                    dialog = node;
+                } else if (node.querySelector) {
+                    dialog = node.querySelector('[role="dialog"]');
+                }
+
+                if (dialog && isSavedRepliesDialog(dialog)) {
+                    onSavedRepliesDialogOpened(dialog);
+                }
+            }
+        }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+};
+
+document.addEventListener("soft-nav:end", () => {
+    _cachedSavedReplies = null;
+    _cachedTemplateItem = null;
+    _cachedListboxClone = null;
+});
