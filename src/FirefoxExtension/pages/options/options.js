@@ -10,6 +10,7 @@ const getFormValues = () => {
         includeIssuesDefault: document.getElementById(`includeIssues`).checked,
         includePullRequestsDefault: document.getElementById(`includePullRequests`).checked,
         refreshRateInMinutesDefault: document.getElementById(`refreshRateInMinutes`).value,
+        showSidebarButtonDefault: document.getElementById(`showSidebarButton`).checked,
     };
 }
 
@@ -63,6 +64,7 @@ const loadForm = async () => {
     document.getElementById(`includeIssues`).checked = settings.includeIssues;
     document.getElementById(`includePullRequests`).checked = settings.includePullRequests;
     document.getElementById(`refreshRateInMinutes`).value = Number(settings.refreshRateInMinutes);
+    document.getElementById(`showSidebarButton`).checked = settings.showSidebarButton ?? true;
 
     const themesElement = document.querySelector(`select`);
 

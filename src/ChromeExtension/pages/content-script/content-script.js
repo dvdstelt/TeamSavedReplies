@@ -1,5 +1,13 @@
 
+const isSidebarButtonEnabled = async () => {
+    const result = await chrome.storage.local.get(["settings"]);
+    const settings = result["settings"];
+    return settings?.showSidebarButtonDefault ?? true;
+};
+
 const showHideSavedRepliesButton = async (showButton) => {
+
+    if (!await isSidebarButtonEnabled()) return;
 
     var showSavedRepliesButton =
         document.querySelector(".show-saved-replies-button-container");
@@ -32,6 +40,8 @@ const main = async () => {
     if (!shouldLoadContentScript(url)) {
         return;
     }
+
+    if (!await isSidebarButtonEnabled()) return;
 
     const showSavedRepliesButton =
         document.querySelector(".show-saved-replies-button-container");

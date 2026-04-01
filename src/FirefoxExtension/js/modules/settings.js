@@ -17,7 +17,8 @@ const getSettings = async () => {
         limitToGitHubOwner: settings.limitToGitHubOwnerDefault,
         includeIssues: settings.includeIssuesDefault,
         includePullRequests: settings.includePullRequestsDefault,
-        refreshRateInMinutes: settings.refreshRateInMinutesDefault
+        refreshRateInMinutes: settings.refreshRateInMinutesDefault,
+        showSidebarButton: settings.showSidebarButtonDefault ?? true
     }
 }
 

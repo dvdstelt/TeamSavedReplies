@@ -11,6 +11,7 @@ const getInitalSettings = () => {
         includeIssuesDefault: true,
         includePullRequestsDefault: true,
         refreshRateInMinutesDefault: `30`,
+        showSidebarButtonDefault: true,
     }
 }
 
@@ -21,10 +22,10 @@ const getSettings = async () =>{
     const result = await chrome.storage.local.get([`settings`]);
 
     if(arrayIsNullOrEmpty(result) || isNullOrEmpty(result[`settings`])){
-        return result[`settings`];
+        return null;
     }
 
-    return null;
+    return result[`settings`];
 }
 
 const saveInitialSettings = async () => {
