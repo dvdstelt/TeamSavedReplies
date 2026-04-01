@@ -25,7 +25,7 @@ const isGitHubIssueUrl = (url) => {
         url = window.location.href;
      }
  
-     const issueUrlPattern = /^(https?:\/\/)github\.com\/.+\/.+\/issues\/\d+/i;
+     const issueUrlPattern = /^(https?:\/\/)github\.com\/.+\/.+\/issues\/(\d+|new)/i;
  
      const projectIssueUrlPattern = /^https:\/\/github.com\/(orgs|users)\/(?<owner>\w+)\/projects\/\d+(?:.*)(?:[?|&]pane=\S+&*)(?:issue=\S+)/i;
  
@@ -60,7 +60,7 @@ const getGitHubOwner = (url) => {
         url = window.location.href;
     }
 
-    const issueOrPrOwnerPattern = /https:\/\/github.com\/(?<owner>[\w]+)\/\w+\/(pull|issues)\/.+/i
+    const issueOrPrOwnerPattern = /https:\/\/github.com\/(?<owner>[\w.-]+)\/[\w.-]+\/(pull|issues)\/.+/i
 
     if(issueOrPrOwnerPattern.test(url)){
        
