@@ -1,14 +1,31 @@
 const SHARED_REPLY_ATTR = "data-shared-saved-reply";
 const SHARED_LISTBOX_ATTR = "data-shared-saved-reply-listbox";
+const ACTIVE_ATTR = "data-shared-active";
 let _cachedSavedReplies = null;
 let _cachedTemplateItem = null;
 let _cachedListboxClone = null;
+let _cachedLegacyTemplateItem = null;
 let _dialogObserverActive = false;
 
-const isSavedRepliesDialog = (element) => {
+// --- Detection ---
+
+const isPrimerReactDialog = (element) => {
     if (!element || !element.querySelector) return false;
     return element.querySelector('input[placeholder="Search saved replies"]') !== null;
 };
+
+const isLegacyDialog = (element) => {
+    if (!element) return false;
+    if (element.classList?.contains('js-saved-reply-container')) return true;
+    if (element.querySelector?.('.js-saved-reply-container')) return true;
+    return false;
+};
+
+const isSavedRepliesDialog = (element) => {
+    return isPrimerReactDialog(element) || isLegacyDialog(element);
+};
+
+// --- Shared helpers ---
 
 const matchesSearch = (reply, searchText) => {
     if (!searchText) return true;
@@ -17,7 +34,7 @@ const matchesSearch = (reply, searchText) => {
 
 const insertReplyIntoTextarea = (body) => {
     const textarea = document.querySelector(
-        'textarea[name="comment[body]"], div[data-testid="markdown-editor-comment-composer"] textarea, textarea[class*="prc-Textarea-TextArea"]'
+        '#new_comment_field, textarea[name="comment[body]"], div[data-testid="markdown-editor-comment-composer"] textarea, textarea[class*="prc-Textarea-TextArea"]'
     );
     if (!textarea) return;
 
@@ -51,7 +68,7 @@ const closeSavedRepliesDialog = () => {
     }));
 };
 
-const ACTIVE_ATTR = "data-shared-active";
+// --- Primer React dialog (issues, new issues) ---
 
 const createReplyListItem = (templateItem, reply, index) => {
     const item = templateItem.cloneNode(true);
@@ -68,12 +85,10 @@ const createReplyListItem = (templateItem, reply, index) => {
     item.setAttribute("aria-labelledby", `${baseId}--label`);
     item.setAttribute("aria-describedby", `${baseId}--block-description`);
 
-    // Hide the checkmark SVG but keep the selection span for indentation and blue bar
     const checkmark = item.querySelector('[data-component="ActionList.Selection"] svg');
     if (checkmark) {
         checkmark.style.visibility = "hidden";
     }
-
 
     const labelSpan = item.querySelector('[id$="--label"]');
     if (labelSpan) {
@@ -184,7 +199,9 @@ const injectIntoCurrentListbox = (dialog, searchText) => {
     hideNoItemsMessage(dialog, hasSharedItems);
 };
 
-const onSavedRepliesDialogOpened = async (dialog) => {
+const onPrimerReactDialogOpened = async (dialog) => {
+    console.log("onPrimerReactDialogOpened: dialog detected");
+
     if (!_cachedSavedReplies) {
         _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
     }
@@ -262,9 +279,132 @@ const onSavedRepliesDialogOpened = async (dialog) => {
     dialogObserver.observe(dialog, { childList: true, subtree: true });
 };
 
+// --- Legacy dialog (PRs) ---
+
+const createLegacyReplyListItem = (templateItem, reply, index) => {
+    const item = templateItem.cloneNode(true);
+
+    item.setAttribute(SHARED_REPLY_ATTR, "true");
+    item.setAttribute("data-value", reply.name);
+
+    const labelSpan = item.querySelector('.ActionListItem-label');
+    if (labelSpan) {
+        labelSpan.textContent = reply.name;
+    }
+
+    const bodySpan = item.querySelector('.js-saved-reply-body .Truncate-text');
+    if (bodySpan) {
+        bodySpan.textContent = reply.body;
+    }
+
+    const trailingLabel = item.querySelector('.ActionListItem-visual--trailing .Label');
+    if (trailingLabel) {
+        trailingLabel.textContent = "";
+    }
+
+    const button = item.querySelector('button');
+    if (button) {
+        button.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            insertReplyIntoTextarea(reply.body);
+
+            const dialogEl = item.closest('dialog');
+            if (dialogEl) dialogEl.close();
+        });
+    }
+
+    return item;
+};
+
+const injectIntoLegacyList = (list) => {
+    if (list.querySelector(`[${SHARED_REPLY_ATTR}]`)) return;
+
+    const templateItem = list.querySelector('li.ActionListItem');
+    if (templateItem) {
+        _cachedLegacyTemplateItem = templateItem.cloneNode(true);
+    }
+
+    if (!_cachedLegacyTemplateItem) return;
+
+    for (const [index, reply] of _cachedSavedReplies.entries()) {
+        const item = createLegacyReplyListItem(_cachedLegacyTemplateItem, reply, index);
+        list.appendChild(item);
+    }
+
+    console.log("onLegacyDialogOpened: injected", _cachedSavedReplies.length, "replies");
+};
+
+const tryLegacyInject = () => {
+    const list = document.querySelector('dialog.js-saved-reply-container[open] ul.js-saved-reply-menu');
+    if (list) {
+        injectIntoLegacyList(list);
+        return true;
+    }
+    return false;
+};
+
+const onLegacyDialogDetected = (dialog) => {
+    const actualDialog = dialog.nodeName === 'DIALOG'
+        ? dialog
+        : dialog.querySelector('dialog.js-saved-reply-container')
+            || dialog.querySelector('dialog');
+
+    if (!actualDialog) return;
+
+    // If dialog is already open, inject now
+    if (actualDialog.hasAttribute('open')) {
+        onLegacyDialogReady(actualDialog);
+        return;
+    }
+
+    // Dialog is closed (pre-rendered on page load). Watch for it to open.
+    const openObserver = new MutationObserver(() => {
+        if (actualDialog.hasAttribute('open')) {
+            onLegacyDialogReady(actualDialog);
+        }
+    });
+    openObserver.observe(actualDialog, { attributes: true, attributeFilter: ['open'] });
+};
+
+const onLegacyDialogReady = async (actualDialog) => {
+    if (!_cachedSavedReplies) {
+        _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
+    }
+
+    if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) return;
+
+    if (tryLegacyInject()) return;
+
+    // Content loads lazily via <include-fragment>. Poll until the list appears.
+    let attempts = 0;
+    const interval = setInterval(() => {
+        if (tryLegacyInject() || ++attempts > 25) {
+            clearInterval(interval);
+        }
+    }, 200);
+};
+
+// --- Dialog detection and observer ---
+
+const onSavedRepliesDialogOpened = async (dialog) => {
+    if (isPrimerReactDialog(dialog)) {
+        await onPrimerReactDialogOpened(dialog);
+    } else if (isLegacyDialog(dialog)) {
+        onLegacyDialogDetected(dialog);
+    }
+};
+
 const observeSavedRepliesDialog = () => {
     if (_dialogObserverActive) return;
     _dialogObserverActive = true;
+
+    console.log("observeSavedRepliesDialog: observer active");
+
+    // Scan for legacy dialogs already in the DOM (and retry, as GitHub may add them after page load)
+    scanForLegacyDialogs();
+    setTimeout(scanForLegacyDialogs, 1000);
+    setTimeout(scanForLegacyDialogs, 3000);
 
     const observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
@@ -272,10 +412,16 @@ const observeSavedRepliesDialog = () => {
                 if (node.nodeType !== Node.ELEMENT_NODE) continue;
 
                 let dialog = null;
+
+                // Primer React: div[role="dialog"]
                 if (node.getAttribute && node.getAttribute('role') === 'dialog') {
                     dialog = node;
+                } else if (node.nodeName === 'DIALOG' || node.nodeName === 'DIALOG-HELPER') {
+                    // Legacy: <dialog> or <dialog-helper>
+                    dialog = node;
                 } else if (node.querySelector) {
-                    dialog = node.querySelector('[role="dialog"]');
+                    dialog = node.querySelector('[role="dialog"]')
+                        || node.querySelector('dialog.js-saved-reply-container');
                 }
 
                 if (dialog && isSavedRepliesDialog(dialog)) {
@@ -288,8 +434,20 @@ const observeSavedRepliesDialog = () => {
     observer.observe(document.body, { childList: true, subtree: true });
 };
 
+const scanForLegacyDialogs = () => {
+    document.querySelectorAll('dialog.js-saved-reply-container').forEach(dialog => {
+        onLegacyDialogDetected(dialog);
+    });
+};
+
 document.addEventListener("soft-nav:end", () => {
     _cachedSavedReplies = null;
     _cachedTemplateItem = null;
     _cachedListboxClone = null;
+    _cachedLegacyTemplateItem = null;
+
+    // Re-scan after navigation since dialog may be added by GitHub's JS
+    scanForLegacyDialogs();
+    setTimeout(scanForLegacyDialogs, 1000);
+    setTimeout(scanForLegacyDialogs, 3000);
 });

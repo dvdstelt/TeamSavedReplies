@@ -1,14 +1,31 @@
 const SHARED_REPLY_ATTR = "data-shared-saved-reply";
 const SHARED_LISTBOX_ATTR = "data-shared-saved-reply-listbox";
+const ACTIVE_ATTR = "data-shared-active";
 let _cachedSavedReplies = null;
 let _cachedTemplateItem = null;
 let _cachedListboxClone = null;
+let _cachedLegacyTemplateItem = null;
 let _dialogObserverActive = false;
 
-const isSavedRepliesDialog = (element) => {
+// --- Detection ---
+
+const isPrimerReactDialog = (element) => {
     if (!element || !element.querySelector) return false;
     return element.querySelector('input[placeholder="Search saved replies"]') !== null;
 };
+
+const isLegacyDialog = (element) => {
+    if (!element) return false;
+    if (element.classList?.contains('js-saved-reply-container')) return true;
+    if (element.querySelector?.('.js-saved-reply-container')) return true;
+    return false;
+};
+
+const isSavedRepliesDialog = (element) => {
+    return isPrimerReactDialog(element) || isLegacyDialog(element);
+};
+
+// --- Shared helpers ---
 
 const matchesSearch = (reply, searchText) => {
     if (!searchText) return true;
@@ -17,7 +34,7 @@ const matchesSearch = (reply, searchText) => {
 
 const insertReplyIntoTextarea = (body) => {
     const textarea = document.querySelector(
-        'textarea[name="comment[body]"], div[data-testid="markdown-editor-comment-composer"] textarea, textarea[class*="prc-Textarea-TextArea"]'
+        '#new_comment_field, textarea[name="comment[body]"], div[data-testid="markdown-editor-comment-composer"] textarea, textarea[class*="prc-Textarea-TextArea"]'
     );
     if (!textarea) return;
 
@@ -35,7 +52,6 @@ const insertReplyIntoTextarea = (body) => {
     nativeInputValueSetter.call(textarea, newValue);
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-    // Place cursor at the end of the inserted text
     const newCursorPos = start + body.length;
     textarea.setSelectionRange(newCursorPos, newCursorPos);
 };
@@ -52,7 +68,7 @@ const closeSavedRepliesDialog = () => {
     }));
 };
 
-const ACTIVE_ATTR = "data-shared-active";
+// --- Primer React dialog (issues, new issues) ---
 
 const createReplyListItem = (templateItem, reply, index) => {
     const item = templateItem.cloneNode(true);
@@ -69,12 +85,10 @@ const createReplyListItem = (templateItem, reply, index) => {
     item.setAttribute("aria-labelledby", `${baseId}--label`);
     item.setAttribute("aria-describedby", `${baseId}--block-description`);
 
-    // Hide the checkmark SVG but keep the selection span for indentation and blue bar
     const checkmark = item.querySelector('[data-component="ActionList.Selection"] svg');
     if (checkmark) {
         checkmark.style.visibility = "hidden";
     }
-
 
     const labelSpan = item.querySelector('[id$="--label"]');
     if (labelSpan) {
@@ -96,7 +110,6 @@ const createReplyListItem = (templateItem, reply, index) => {
 
     item.addEventListener("mouseenter", () => {
         const listbox = item.closest('ul[role="listbox"]');
-        // Clear active state from all siblings
         listbox?.querySelectorAll("[data-is-active-descendant]").forEach(el => {
             el.removeAttribute("data-is-active-descendant");
             el.removeAttribute(ACTIVE_ATTR);
@@ -135,8 +148,6 @@ const injectSharedReplies = (listbox, savedReplies, searchText) => {
 
     const filteredReplies = savedReplies.filter(r => matchesSearch(r, searchText));
 
-    console.log("injectSharedReplies: searchText =", searchText, "filtered =", filteredReplies.length, "of", savedReplies.length);
-
     for (const [index, reply] of filteredReplies.entries()) {
         const item = createReplyListItem(_cachedTemplateItem, reply, index);
         listbox.appendChild(item);
@@ -144,20 +155,16 @@ const injectSharedReplies = (listbox, savedReplies, searchText) => {
 };
 
 const getOrCreateListbox = (dialog) => {
-    // First, remove any listbox we previously created
     const previouslyCreated = dialog.querySelector(`[${SHARED_LISTBOX_ATTR}]`);
 
-    // Check if React's listbox exists
     const existingListbox = dialog.querySelector(`ul[role="listbox"]:not([${SHARED_LISTBOX_ATTR}])`);
     if (existingListbox) {
-        // React's listbox is present; remove ours if we created one
         if (previouslyCreated) {
             previouslyCreated.remove();
         }
         return existingListbox;
     }
 
-    // React removed its listbox (no native matches). Create one from cache.
     if (!_cachedListboxClone) return null;
 
     const container = dialog.querySelector('[data-testid="filtered-action-list"] > div:last-child')
@@ -171,8 +178,6 @@ const getOrCreateListbox = (dialog) => {
     const listbox = _cachedListboxClone.cloneNode(false);
     listbox.setAttribute(SHARED_LISTBOX_ATTR, "true");
     container.prepend(listbox);
-
-    console.log("getOrCreateListbox: created fallback listbox in container");
 
     return listbox;
 };
@@ -194,34 +199,27 @@ const injectIntoCurrentListbox = (dialog, searchText) => {
     hideNoItemsMessage(dialog, hasSharedItems);
 };
 
-const onSavedRepliesDialogOpened = async (dialog) => {
-    console.log("onSavedRepliesDialogOpened: dialog detected");
+const onPrimerReactDialogOpened = async (dialog) => {
+    console.log("onPrimerReactDialogOpened: dialog detected");
 
     if (!_cachedSavedReplies) {
         _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
-        console.log("onSavedRepliesDialogOpened: loaded replies from storage", _cachedSavedReplies);
     }
 
-    if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) {
-        console.log("onSavedRepliesDialogOpened: no saved replies found in storage");
-        return;
-    }
+    if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) return;
 
     const initialInject = () => {
         const listbox = dialog.querySelector('ul[role="listbox"]');
         if (!listbox) return false;
 
-        // Cache the listbox element (empty clone) for when React removes it
         _cachedListboxClone = listbox.cloneNode(false);
         _cachedListboxClone.removeAttribute("data-has-active-descendant");
 
         injectSharedReplies(listbox, _cachedSavedReplies, "");
 
-        // Use event delegation on dialog so handlers survive React replacing elements
         dialog.addEventListener("input", (e) => {
             if (!e.target.matches('input[placeholder="Search saved replies"]')) return;
             const searchText = e.target.value.toLowerCase();
-            console.log("search input changed:", searchText);
             setTimeout(() => injectIntoCurrentListbox(dialog, searchText), 0);
         });
 
@@ -231,7 +229,6 @@ const onSavedRepliesDialogOpened = async (dialog) => {
             const currentListbox = getOrCreateListbox(dialog);
             if (!currentListbox) return;
 
-            // Only handle navigation when no native items exist
             const hasNativeItems = currentListbox.querySelector(`li[role="option"]:not([${SHARED_REPLY_ATTR}])`);
             if (hasNativeItems) return;
 
@@ -274,15 +271,128 @@ const onSavedRepliesDialogOpened = async (dialog) => {
 
     if (initialInject()) return;
 
-    console.log("onSavedRepliesDialogOpened: listbox not yet rendered, waiting...");
-
     const dialogObserver = new MutationObserver(() => {
         if (initialInject()) {
-            console.log("onSavedRepliesDialogOpened: listbox appeared");
             dialogObserver.disconnect();
         }
     });
     dialogObserver.observe(dialog, { childList: true, subtree: true });
+};
+
+// --- Legacy dialog (PRs) ---
+
+const createLegacyReplyListItem = (templateItem, reply, index) => {
+    const item = templateItem.cloneNode(true);
+
+    item.setAttribute(SHARED_REPLY_ATTR, "true");
+    item.setAttribute("data-value", reply.name);
+
+    const labelSpan = item.querySelector('.ActionListItem-label');
+    if (labelSpan) {
+        labelSpan.textContent = reply.name;
+    }
+
+    const bodySpan = item.querySelector('.js-saved-reply-body .Truncate-text');
+    if (bodySpan) {
+        bodySpan.textContent = reply.body;
+    }
+
+    const trailingLabel = item.querySelector('.ActionListItem-visual--trailing .Label');
+    if (trailingLabel) {
+        trailingLabel.textContent = "";
+    }
+
+    const button = item.querySelector('button');
+    if (button) {
+        button.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            insertReplyIntoTextarea(reply.body);
+
+            const dialogEl = item.closest('dialog');
+            if (dialogEl) dialogEl.close();
+        });
+    }
+
+    return item;
+};
+
+const injectIntoLegacyList = (list) => {
+    if (list.querySelector(`[${SHARED_REPLY_ATTR}]`)) return;
+
+    const templateItem = list.querySelector('li.ActionListItem');
+    if (templateItem) {
+        _cachedLegacyTemplateItem = templateItem.cloneNode(true);
+    }
+
+    if (!_cachedLegacyTemplateItem) return;
+
+    for (const [index, reply] of _cachedSavedReplies.entries()) {
+        const item = createLegacyReplyListItem(_cachedLegacyTemplateItem, reply, index);
+        list.appendChild(item);
+    }
+
+    console.log("onLegacyDialogOpened: injected", _cachedSavedReplies.length, "replies");
+};
+
+const tryLegacyInject = () => {
+    const list = document.querySelector('dialog.js-saved-reply-container[open] ul.js-saved-reply-menu');
+    if (list) {
+        injectIntoLegacyList(list);
+        return true;
+    }
+    return false;
+};
+
+const onLegacyDialogDetected = (dialog) => {
+    const actualDialog = dialog.nodeName === 'DIALOG'
+        ? dialog
+        : dialog.querySelector('dialog.js-saved-reply-container')
+            || dialog.querySelector('dialog');
+
+    if (!actualDialog) return;
+
+    // If dialog is already open, inject now
+    if (actualDialog.hasAttribute('open')) {
+        onLegacyDialogReady(actualDialog);
+        return;
+    }
+
+    // Dialog is closed (pre-rendered on page load). Watch for it to open.
+    const openObserver = new MutationObserver(() => {
+        if (actualDialog.hasAttribute('open')) {
+            onLegacyDialogReady(actualDialog);
+        }
+    });
+    openObserver.observe(actualDialog, { attributes: true, attributeFilter: ['open'] });
+};
+
+const onLegacyDialogReady = async (actualDialog) => {
+    if (!_cachedSavedReplies) {
+        _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
+    }
+
+    if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) return;
+
+    if (tryLegacyInject()) return;
+
+    // Content loads lazily via <include-fragment>. Poll until the list appears.
+    let attempts = 0;
+    const interval = setInterval(() => {
+        if (tryLegacyInject() || ++attempts > 25) {
+            clearInterval(interval);
+        }
+    }, 200);
+};
+
+// --- Dialog detection and observer ---
+
+const onSavedRepliesDialogOpened = async (dialog) => {
+    if (isPrimerReactDialog(dialog)) {
+        await onPrimerReactDialogOpened(dialog);
+    } else if (isLegacyDialog(dialog)) {
+        onLegacyDialogDetected(dialog);
+    }
 };
 
 const observeSavedRepliesDialog = () => {
@@ -291,16 +401,27 @@ const observeSavedRepliesDialog = () => {
 
     console.log("observeSavedRepliesDialog: observer active");
 
+    // Scan for legacy dialogs already in the DOM (and retry, as GitHub may add them after page load)
+    scanForLegacyDialogs();
+    setTimeout(scanForLegacyDialogs, 1000);
+    setTimeout(scanForLegacyDialogs, 3000);
+
     const observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 if (node.nodeType !== Node.ELEMENT_NODE) continue;
 
                 let dialog = null;
+
+                // Primer React: div[role="dialog"]
                 if (node.getAttribute && node.getAttribute('role') === 'dialog') {
                     dialog = node;
+                } else if (node.nodeName === 'DIALOG' || node.nodeName === 'DIALOG-HELPER') {
+                    // Legacy: <dialog> or <dialog-helper>
+                    dialog = node;
                 } else if (node.querySelector) {
-                    dialog = node.querySelector('[role="dialog"]');
+                    dialog = node.querySelector('[role="dialog"]')
+                        || node.querySelector('dialog.js-saved-reply-container');
                 }
 
                 if (dialog && isSavedRepliesDialog(dialog)) {
@@ -313,8 +434,20 @@ const observeSavedRepliesDialog = () => {
     observer.observe(document.body, { childList: true, subtree: true });
 };
 
+const scanForLegacyDialogs = () => {
+    document.querySelectorAll('dialog.js-saved-reply-container').forEach(dialog => {
+        onLegacyDialogDetected(dialog);
+    });
+};
+
 document.addEventListener("soft-nav:end", () => {
     _cachedSavedReplies = null;
     _cachedTemplateItem = null;
     _cachedListboxClone = null;
+    _cachedLegacyTemplateItem = null;
+
+    // Re-scan after navigation since dialog may be added by GitHub's JS
+    scanForLegacyDialogs();
+    setTimeout(scanForLegacyDialogs, 1000);
+    setTimeout(scanForLegacyDialogs, 3000);
 });
