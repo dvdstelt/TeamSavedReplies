@@ -40,24 +40,34 @@
                     <input id="limitToGitHubOwner" minlength="3" class="dialogInput" type="text"
                         data-errorMessage="Please enter a GitHub organziation name or user name." disabled />
                 </div>
-                <div>
+                <div class="twoColumn leftColumn">
                     <label class="label">Applies to Issues:</label>
                     <label class="toggle">
                         <input id="includeIssues" class="dialogInput toggle-checkbox" type="checkbox" checked>
                         <div class="toggle-switch"></div>
                     </label>
                 </div>
-                <div>
+                <div class="twoColumn rightColumn">
                     <label class="label">Applies to Pull Requests:</label>
                     <label class="toggle">
                         <input id="includePullRequests" class="dialogInput toggle-checkbox" type="checkbox" checked>
                         <div class="toggle-switch"></div>
                     </label>
                 </div>
-                <div class="twoColumn leftColumn">
+                <div style="clear: both;">
                     <label class="label">Refresh rate in minutes:</label>
                     <input id="refreshRateInMinutes" class="dialogInput" type="number" min="1" max="60" value="1"
                         data-errorMessage="Please enter a number." required />
+                </div>
+                <div style="padding-top: 20px; padding-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label class="label" style="margin: 0;">Show sidebar button on GitHub:</label>
+                        <span title="Shared saved replies are also available via GitHub's built-in saved replies button above a comment." style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--foreground-primary, #666); font-size: 12px; font-weight: bold; color: var(--foreground-primary, #666);">i</span>
+                    </div>
+                    <label class="toggle">
+                        <input id="showSidebarButton" class="dialogInput toggle-checkbox" type="checkbox" checked>
+                        <div class="toggle-switch"></div>
+                    </label>
                 </div>
             </div>
         </div>

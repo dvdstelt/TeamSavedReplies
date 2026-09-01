@@ -14,3 +14,5 @@ document.addEventListener("soft-nav:end", main);
 main().catch((error) => {
     console.error("Oh no!", error);
 });
+
+observeSavedRepliesDialog();
