@@ -26,8 +26,8 @@ const createSavedRepliesUl = (savedReplies) => {
 
     const repliesUl = createElement("ul", {
         children: [],
-        className:"js-saved-reply-menu ActionListWrap shared-saved-replies",
-        "aria-label":"Shared saved replies",
+        className:"js-saved-reply-menu ActionListWrap team-saved-replies",
+        "aria-label":"Team saved replies",
         "id": `action-list-c91b88da-b2d0-424b-b824-7a08b4be375c`,
         role:"list",
         "data-view-component":"true"

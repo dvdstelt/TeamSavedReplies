@@ -1,5 +1,5 @@
-const SHARED_REPLY_ATTR = "data-shared-saved-reply";
-const SHARED_LISTBOX_ATTR = "data-shared-saved-reply-listbox";
+const SHARED_REPLY_ATTR = "data-team-saved-reply";
+const SHARED_LISTBOX_ATTR = "data-team-saved-reply-listbox";
 const ACTIVE_ATTR = "data-shared-active";
 let _cachedSavedReplies = null;
 let _cachedTemplateItem = null;
