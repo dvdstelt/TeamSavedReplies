@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Shared Saved Replies",
+  "name": "Team Saved Replies",
   "description": "Adds saved replies to GitHub's saved replies list when commenting on issues or pull requests.",
   "version": "0.1.0",
   "action":{
@@ -8,7 +8,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "{15e48600-9a54-4abd-94bd-407a2551c976}",
+      "id": "{921737e1-c063-41c6-9adc-7b7e3e41fbfe}",
       "strict_min_version": "144.0",
       "data_collection_permissions":{
         "required":["none"]
