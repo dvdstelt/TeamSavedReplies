@@ -4,7 +4,7 @@ This file provides guidance to AI coding agents when working with code in this r
 
 ## Project Overview
 
-Shared Saved Replies is a dual-platform browser extension (Chrome + Firefox) that populates GitHub's saved replies UI with templates fetched from markdown files in GitHub repositories. Templates are parsed from H2 headers followed by markdown code blocks in `.md` files.
+Team Saved Replies is a dual-platform browser extension (Chrome + Firefox) that populates GitHub's saved replies UI with templates fetched from markdown files in GitHub repositories. Templates are parsed from H2 headers followed by markdown code blocks in `.md` files.
 
 ## Build and Test
 
@@ -87,7 +87,7 @@ Cross-component communication uses a message protocol with `messageType` (comman
 ## Release Process
 
 - Chrome: Tag triggers GitHub Actions workflow that packages, signs, and uploads to Chrome Web Store
-- Firefox: Manual upload to [Firefox Add-ons](https://addons.mozilla.org/en-US/developers/addon/shared-saved-replies/versions/submit/)
+- Firefox: Manual upload to this fork's own listing on the [Firefox Add-ons Developer Hub](https://addons.mozilla.org/en-US/developers/addons)
 - See `docs/deploy.md` for deployment instructions
 
 ## Code Conventions
