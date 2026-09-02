@@ -8,7 +8,9 @@
     box-sizing: border-box;
     width: 26px;
     height: 76px;
-    padding: 0 0 0 5px;
+    /* 26 less the 2px rule and 4px either side leaves exactly the 16px icon,
+       so the collapsed tab centres it. */
+    padding: 0 4px;
     background: #201e1d;
     border: none;
     border-left: 2px solid #ec3013;
@@ -36,7 +38,11 @@
     flex: none;
     width: 16px;
     height: 16px;
-    filter: invert(1);
+    /* The handoff asks for invert(1) "so it reads white on ink", but the icon
+       is #00729c rather than black, and inverting blue gives salmon. Flattening
+       to black first is what actually produces the white glyph it describes,
+       and keeps the accent red to the 2px rule as the palette intends. */
+    filter: brightness(0) invert(1);
     pointer-events: none;
 }
 
