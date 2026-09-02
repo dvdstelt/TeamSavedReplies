@@ -1,4 +1,4 @@
-const getSharedSavedReplyConfigurationsFromLocalStorage = async () => {
+const getTeamSavedReplyConfigurationsFromLocalStorage = async () => {
 
     const results = await chrome.storage.local.get();
 
@@ -19,4 +19,4 @@ const getSharedSavedReplyConfigurationsFromLocalStorage = async () => {
     return replyConfigurations;
 }
 
-export { getSharedSavedReplyConfigurationsFromLocalStorage }
+export { getTeamSavedReplyConfigurationsFromLocalStorage }

@@ -1,16 +1,20 @@
-## What is Shared Saved Replies
+## What is Team Saved Replies
 
-Shared Saved Replies is a browser extension that allows teams to create `saved replies` for use on GitHub.com. It will populate the saved replies list when adding a new comment to an issue or pull request in a GitHub repository. For teams continuously evolving the structure and requirements of their saved replies templates this extension will keep the saved replies up to date, by updating and caching them on a schedule set up the user.
+Team Saved Replies is a browser extension that allows teams to create `saved replies` for use on GitHub.com. It will populate the saved replies list when adding a new comment to an issue or pull request in a GitHub repository. For teams continuously evolving the structure and requirements of their saved replies templates this extension will keep the saved replies up to date, by updating and caching them on a schedule set up the user.
 
-![Saved Replies Example](https://github.com/awright18/SharedSavedReplies/blob/main/src/ChromeExtension/images/main_screen_shot.png)
+![Saved Replies Example](https://github.com/dvdstelt/SharedSavedReplies/blob/main/src/ChromeExtension/images/main_screen_shot.png)
 
-## Where do I get it? 
+## Where do I get it?
+
+This fork is not published to the Chrome Web Store or Firefox Add-ons yet, so load it from source:
 
 For Chrome or Edge users:
-- [Chrome WebStore](https://chromewebstore.google.com/detail/shared-saved-replies/lgfgefhgbpjhebeljngbobdehmldmjfc)
+- Clone this repository, open `chrome://extensions`, enable "Developer mode", click "Load unpacked" and select `src/ChromeExtension`.
 
-For Firefox users: 
-- [Firefox Addons](https://addons.mozilla.org/en-US/firefox/addon/shared-saved-replies/)
+For Firefox users:
+- Clone this repository, open `about:debugging#/runtime/this-firefox`, click "Load Temporary Add-on" and select `src/FirefoxExtension/manifest.json`.
+
+It uses its own name and add-on ID, so it can be installed alongside the original extension without conflicting with it.
 
 ## How do I use it? 
 
@@ -62,12 +66,12 @@ These replies are to be used by our team to facilitate consistent communication.
 
 #### Install and configure the extension
 
-1. Install the Shared Saved Replies [chrome extension](https://chrome.google.com/webstore/detail/shared-saved-replies/lgfgefhgbpjhebeljngbobdehmldmjfc) or the [firefox addon](https://addons.mozilla.org/en-US/firefox/addon/shared-saved-replies/)
+1. Install the extension by following the steps in [Where do I get it?](#where-do-i-get-it) above.
 1. Pin the extension.
 1. Click on the pinned extension icon.
 1. Click the plus button. 
 
-![Popup Screen](https://github.com/awright18/SharedSavedReplies/blob/main/src/ChromeExtension/images/popup.png)
+![Popup Screen](https://github.com/dvdstelt/SharedSavedReplies/blob/main/src/ChromeExtension/images/popup.png)
 
 1. For "Saved Replies Url": Enter the GitHub url of the the saved replies .md file that was created prevoulsy. (This should not be the raw url).
 1. For "Name", Provide a unique name for the configuration. 
@@ -77,11 +81,15 @@ These replies are to be used by our team to facilitate consistent communication.
 1. Set the refresh rate of how often the saved replies will be updated. The default is every 30 minutes. (This process only takes a few hundred milliseconds to perform.)
 1. Click save.
 
-![Add Saved Replies Screen](https://github.com/awright18/SharedSavedReplies/blob/main/src/ChromeExtension/images/Add_Screen.png)
+![Add Saved Replies Screen](https://github.com/dvdstelt/SharedSavedReplies/blob/main/src/ChromeExtension/images/Add_Screen.png)
 
 
 #### Use the saved replies
 
 1. Navigate to either an issue or pull request and clicked the "saved replies" icon on the new comment menu and see your saved replies appear. 
 
-![Click on Save Replies Icon](https://github.com/awright18/SharedSavedReplies/blob/main/docs/images/click_saved_replies_icon.png)
+![Click on Save Replies Icon](https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/images/click_saved_replies_icon.png)
+
+## Credits
+
+Team Saved Replies is a fork of [awright18/SharedSavedReplies](https://github.com/awright18/SharedSavedReplies) by Andrew Wright. It carries the changes from [awright18/SharedSavedReplies#34](https://github.com/awright18/SharedSavedReplies/pull/34), which adds injection into GitHub's native saved replies dialog on both issue and pull request pages.

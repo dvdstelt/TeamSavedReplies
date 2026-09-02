@@ -8,7 +8,7 @@ const createShowSavedRepliesButton = () => {
                 children:[
                     createElement("img",{
                         children:[],
-                        className:"show-saved-replies-icon-button",
+                        className:"team-saved-replies-icon-button",
                         src:iconUrl
                     })
                 ],
@@ -18,7 +18,7 @@ const createShowSavedRepliesButton = () => {
                        border: none;`,
                 onclick:"browser.sidebarAction.toggle();"
             })],
-        className:"show-saved-replies-button-container"
+        className:"team-saved-replies-button-container"
     });
 
     return showSavedReliesButton;

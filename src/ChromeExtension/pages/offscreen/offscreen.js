@@ -1,10 +1,10 @@
 ﻿
 import { fetchSavedRepliesFromUrl } from "../../js/modules/fetch-saved-replies.js";
-import { handleUpdateSharedSavedRepliesCommand, sendSaveSharedSavedRepliesCommand } from "./offscreen-messaging.js";
+import { handleUpdateTeamSavedRepliesCommand, sendSaveTeamSavedRepliesCommand } from "./offscreen-messaging.js";
 
 chrome.runtime.onMessage.addListener( async (request, sender, sendResponse) => {
 
-    await handleUpdateSharedSavedRepliesCommand(
+    await handleUpdateTeamSavedRepliesCommand(
         request,       
         async (name,url) => {
             try {                                    
@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener( async (request, sender, sendResponse) => {
 
                 const replies = await fetchSavedRepliesFromUrl(url);
     
-                await sendSaveSharedSavedRepliesCommand(name, replies);    
+                await sendSaveTeamSavedRepliesCommand(name, replies);    
             }
             catch (error){                
                 

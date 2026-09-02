@@ -88,7 +88,7 @@ const tryPublishCanLoadSavedRepliesChangedEvent = async (tabId, url) =>{
     await trySendMessageToContentScript(tabId, canLoadSavedRepliesChangedEvent);
 }
 
-const updateSharedSavedReplies = async (name) => {
+const updateTeamSavedReplies = async (name) => {
 
     const url = await getUrlForShareSavedRepliesName(name);
 
@@ -159,7 +159,7 @@ browser.storage.onChanged.addListener(async (changes, area) => {
 
         if (name && !isNullOrEmpty(newValue)) {
 
-            await updateSharedSavedReplies(name);
+            await updateTeamSavedReplies(name);
 
             return;
         }
@@ -177,7 +177,7 @@ browser.storage.onChanged.addListener(async (changes, area) => {
 });
 
 
-onAlarm(async (name) => await updateSharedSavedReplies(name));
+onAlarm(async (name) => await updateTeamSavedReplies(name));
 
 browser.webNavigation.onHistoryStateUpdated.addListener(
     async (details) =>  {

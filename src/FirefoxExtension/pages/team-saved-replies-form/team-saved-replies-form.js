@@ -1,8 +1,8 @@
 import { isNullOrEmpty, arrayIsNullOrEmpty } from "../../js/modules/null.js";
-import { setupValidation, validateForm } from "./shared-saved-replies-form.validation.js";
+import { setupValidation, validateForm } from "./team-saved-replies-form.validation.js";
 import { getSettings } from "../../js/modules/settings.js";
 import { applyCurrentTheme } from "../../js/modules/theme.js";
-
+import { isGitHubPermissionEnabled } from "../../js/modules/github-permissions.js";
 
 const getFromLocalStorage = async (name) => {
 
@@ -29,6 +29,8 @@ const saveToLocalStorage = async (values) => {
     const configKey = `${values.name}-config`;    
 
     await chrome.storage.local.set({ [configKey]: values, });
+
+    console.log(`saved ${configKey}` );
 }
 
 const getFormValues = () => {
@@ -57,7 +59,7 @@ const setFormValues = (values) => {
 
 const close = async () => {
 
-    await chrome.tabs.getCurrent((tab) => chrome.tabs.remove(tab.id));
+    await browser.tabs.getCurrent((tab) => browser.tabs.remove(tab.id));
 }
 
 const save = async () => {
@@ -66,15 +68,14 @@ const save = async () => {
 
     if (formIsValid) {
 
-        const formValues = getFormValues();
-
-        await saveToLocalStorage(formValues);
         
         console.log("save config");
 
-        await chrome.tabs.getCurrent(function (tab) {
-            chrome.tabs.remove(tab.id, function () { });
-        });
+        const formValues = getFormValues();
+
+        await saveToLocalStorage(formValues);
+
+        await browser.tabs.getCurrent((tab) => browser.tabs.remove(tab.id));     
 
         
     } else {
@@ -135,4 +136,21 @@ const loadForm = async () => {
     await applyCurrentTheme();
 }
 
-await loadForm();
+const initialize = async () => {
+
+    console.log('')
+    const gitHubPermissionEnabled = await isGitHubPermissionEnabled();
+
+    console.log('githubpermissions', gitHubPermissionEnabled);
+
+    if(!gitHubPermissionEnabled){
+        chrome.tabs.create({
+            url: `/pages/github-permissions/github-permissions.html`
+        });
+    }else{
+        await loadForm();
+    }
+}
+
+await initialize();
+

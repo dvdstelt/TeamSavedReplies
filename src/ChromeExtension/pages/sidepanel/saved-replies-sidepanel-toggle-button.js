@@ -13,7 +13,7 @@ const createShowSavedRepliesButton = () => {
                 children:[
                     createElement("img",{
                         children:[],
-                        className:"show-saved-replies-icon-button",
+                        className:"team-saved-replies-icon-button",
                         src:iconUrl
                     })
                 ],
@@ -22,7 +22,7 @@ const createShowSavedRepliesButton = () => {
                        background-repeat: no-repeat;
                        border: none;`
             })],
-        className:"show-saved-replies-button-container"
+        className:"team-saved-replies-button-container"
     });
 
     return showSavedReliesButton;
@@ -33,21 +33,21 @@ const addShowSavedRepliesClickHandler = (showSavedRepliesButton) =>{
     showSavedRepliesButton.addEventListener(`click`, () =>{
     
         if(!savedRepliesVisible){
-            const openSavedRepliesPanelMessage = "OpenSharedSavedRepliesPanel";
+            const openSavedRepliesPanelMessage = "OpenTeamSavedRepliesPanel";
 
-            const openSharedSavedRepliesPanelCommand = 
+            const openTeamSavedRepliesPanelCommand = 
                 createCommand(openSavedRepliesPanelMessage, SERVICE_WORKER, {});
 
-            sendNonAsync(openSharedSavedRepliesPanelCommand);
+            sendNonAsync(openTeamSavedRepliesPanelCommand);
 
             savedRepliesVisible = true;
         } else{
-            const closeSavedRepliesPanelMessage = "CloseSharedSavedRepliesPanel";
+            const closeSavedRepliesPanelMessage = "CloseTeamSavedRepliesPanel";
 
-            const closeSharedSavedRepliesPanelCommand = 
+            const closeTeamSavedRepliesPanelCommand = 
                 createCommand(closeSavedRepliesPanelMessage, SIDE_PANEL, {});
     
-            sendNonAsync(closeSharedSavedRepliesPanelCommand);  
+            sendNonAsync(closeTeamSavedRepliesPanelCommand);  
 
             savedRepliesVisible = false;
         } 

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Shared Saved Replies",
+  "name": "Team Saved Replies",
   "description": "Adds saved replies to GitHub's saved replies list when commenting on issues or pull requests.",
   "version": "0.1.0",
   "action":{

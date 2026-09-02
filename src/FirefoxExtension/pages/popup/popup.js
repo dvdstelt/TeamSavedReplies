@@ -1,7 +1,7 @@
 
 import { arrayIsEmpty} from "../../js/modules/null.js";
 import { createConfigButton } from "./saved-replies-button-element.js";
-import { getSharedSavedReplyConfigurationsFromLocalStorage } from "./popup-storage.js";
+import { getTeamSavedReplyConfigurationsFromLocalStorage } from "./popup-storage.js";
 import { applyCurrentTheme } from "../../js/modules/theme.js";
 
 let configs = [];
@@ -72,7 +72,7 @@ const filterItems = (searchValue) => {
 const openEditItemPage = (name) => {
 
     chrome.tabs.create({
-        url: `/pages/shared-saved-replies-form/shared-saved-replies-form.html?name=${name}`
+        url: `/pages/team-saved-replies-form/team-saved-replies-form.html?name=${name}`
     });
 }
 
@@ -80,7 +80,7 @@ const openAddItemPage = async () => {
 
     //open a tab to create a new shared saved reply
     chrome.tabs.create({
-        url: `/pages/shared-saved-replies-form/shared-saved-replies-form.html`
+        url: `/pages/team-saved-replies-form/team-saved-replies-form.html`
     })
 }
 
@@ -104,7 +104,7 @@ const deleteItem = async (name) => {
     await showNoRepliesIfNoConfigs();
 }
 
-const navigateToSharedSavedReplies = async (url) => {
+const navigateToTeamSavedReplies = async (url) => {
 
     chrome.tabs.create({
         url: url
@@ -113,7 +113,7 @@ const navigateToSharedSavedReplies = async (url) => {
 
 const loadItems = async () => {
 
-    configs = await getSharedSavedReplyConfigurationsFromLocalStorage();
+    configs = await getTeamSavedReplyConfigurationsFromLocalStorage();
 
     const configButtonsContainer = document.querySelector(`.saved-replies-list > div`);
 
@@ -126,7 +126,7 @@ const loadItems = async () => {
             const openSavedRepliesButtonElement = configButtonElement.querySelector(`.saved-replies-button`);
 
             openSavedRepliesButtonElement.addEventListener(`click`,
-                async () => await navigateToSharedSavedReplies(config.url));
+                async () => await navigateToTeamSavedReplies(config.url));
 
             const editItemButton = configButtonElement.querySelector(`.saved-replies-edit-button`);
 

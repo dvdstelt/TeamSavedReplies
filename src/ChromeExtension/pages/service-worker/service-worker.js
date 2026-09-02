@@ -58,22 +58,22 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
 });
 
-const sendUpdateSharedSavedRepliesCommand = async (name, url) => {
+const sendUpdateTeamSavedRepliesCommand = async (name, url) => {
 
-    const command = createCommand(`UpdateSharedSavedReplies`, OFFSCREEN, { name: name, url: url });
+    const command = createCommand(`UpdateTeamSavedReplies`, OFFSCREEN, { name: name, url: url });
 
     await send(command);
 
     return true;
 }
 
-const sendUpdateSharedSavedRepliesMessageToOffScreen = async (name) => {
+const sendUpdateTeamSavedRepliesMessageToOffScreen = async (name) => {
 
     await setupOffscreenDocument();
 
     const url = await getUrlForShareSavedRepliesName(name);
 
-    await sendUpdateSharedSavedRepliesCommand(name, url);
+    await sendUpdateTeamSavedRepliesCommand(name, url);
 
     // await closeOffscreenDocument();
 }
@@ -104,7 +104,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 
         if (name && !isNullOrEmpty(newValue)) {
 
-            await sendUpdateSharedSavedRepliesMessageToOffScreen(name);
+            await sendUpdateTeamSavedRepliesMessageToOffScreen(name);
 
             return;
         }
@@ -123,12 +123,12 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
-    handleOpenSharedSavedRepliesPanel(request, () =>{  
+    handleOpenTeamSavedRepliesPanel(request, () =>{  
         
         chrome.sidePanel.open({ tabId: activeTabId });
     });
 
-    await handleSaveSharedSavedRepliesCommand(request, async (name, replies) => {
+    await handleSaveTeamSavedRepliesCommand(request, async (name, replies) => {
 
         console.log(`saving replies for ${name}.`);
 
@@ -141,7 +141,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 });
 
 onAlarm(async (name) =>
-    await sendUpdateSharedSavedRepliesMessageToOffScreen(name));
+    await sendUpdateTeamSavedRepliesMessageToOffScreen(name));
 
 chrome.webNavigation.onHistoryStateUpdated.addListener( 
     async (details) =>  {

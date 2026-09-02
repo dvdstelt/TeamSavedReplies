@@ -10,7 +10,7 @@ const showHideSavedRepliesButton = async (showButton) => {
     if (!await isSidebarButtonEnabled()) return;
 
     var showSavedRepliesButton =
-        document.querySelector(".show-saved-replies-button-container");
+        document.querySelector(".team-saved-replies-button-container");
 
     if (showSavedRepliesButton === undefined || showSavedRepliesButton == null) {
 
@@ -44,7 +44,7 @@ const main = async () => {
     if (!await isSidebarButtonEnabled()) return;
 
     const showSavedRepliesButton =
-        document.querySelector(".show-saved-replies-button-container");
+        document.querySelector(".team-saved-replies-button-container");
 
     if (showSavedRepliesButton === undefined || showSavedRepliesButton == null) {
 
