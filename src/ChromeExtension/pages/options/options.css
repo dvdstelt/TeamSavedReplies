@@ -316,3 +316,22 @@ body {
     letter-spacing: 0;
     font-weight: 400;
 }
+
+.options-source-sync {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    padding: 4px 6px;
+}
+
+.options-source-sync:hover {
+    background: var(--accent-200);
+}
+
+.options-source-sync:disabled {
+    color: var(--neutral-600);
+    background: none;
+    cursor: default;
+}

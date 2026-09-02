@@ -230,6 +230,39 @@ const createSourcePanel = (source, index) => {
 
     statusElements.set(source.id, status);
 
+    const sync = createElement(`button`, {
+        children: [`Sync`],
+        className: `options-source-sync`,
+        type: `button`,
+        title: `Fetch this source's templates now`
+    });
+
+    // Syncs whatever is in the fields right now, so a URL can be checked before
+    // it is saved. The status beside the name reports what came back.
+    sync.addEventListener(`click`, async () => {
+
+        sync.disabled = true;
+
+        try {
+            const command = createCommand(`RefreshSource`, SERVICE_WORKER, { source: { ...source } });
+
+            const response = await chrome.runtime.sendMessage(command);
+
+            if (response?.error) {
+
+                paintSyncStatus(source.id, { state: `error`, message: response.error });
+            }
+        }
+        catch (error) {
+
+            paintSyncStatus(source.id, { state: `error`, message: error?.message ?? String(error) });
+        }
+        finally {
+
+            sync.disabled = false;
+        }
+    });
+
     const remove = createElement(`button`, {
         children: [`Remove`],
         className: `options-source-remove`,
@@ -258,7 +291,7 @@ const createSourcePanel = (source, index) => {
                         className: `options-source-heading`
                     }),
                     createElement(`div`, {
-                        children: [status, remove],
+                        children: [status, sync, remove],
                         className: `options-source-heading`
                     })
                 ],

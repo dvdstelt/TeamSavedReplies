@@ -29,18 +29,27 @@ const removeDataFromLocalStorage = async (sourceId) => {
     ]);
 }
 
-const removeDataForDeletedSources = async (previousSources, currentSources) => {
+// Drops cached replies and status for any source id that is not configured any
+// more. Diffing against the previous list would miss a source that was added and
+// synced from the options page but never saved.
+const removeOrphanedSourceData = async (currentSources) => {
 
     const currentIds = (currentSources ?? []).map((source) => source.id);
 
-    for (const previous of previousSources ?? []) {
+    const everything = await chrome.storage.local.get();
 
-        if (!currentIds.includes(previous.id)) {
+    const orphaned = Object.keys(everything).filter((key) => {
 
-            console.log(`source ${previous.id} removed`);
+        const match = key.match(/^(?:replies|lastUpdated|syncStatus):(.+)$/);
 
-            await removeDataFromLocalStorage(previous.id);
-        }
+        return match !== null && !currentIds.includes(match[1]);
+    });
+
+    if (orphaned.length > 0) {
+
+        console.log(`dropping cached data for`, orphaned);
+
+        await chrome.storage.local.remove(orphaned);
     }
 }
 

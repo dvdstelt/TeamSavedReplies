@@ -29,13 +29,16 @@ const getSavedReplyBody = (headingContainer) =>{
 const tryParseReplies = async (response) => {
 
     if(!response){
-        return false;
+        throw new Error(`No response from the templates URL.`);
     }
 
-    if(response.ok){
-    
-        return await response.text();
+    // A wrong or private URL used to fall through as an empty parse, which read as
+    // "no templates found" rather than as the fetch failing.
+    if(!response.ok){
+        throw new Error(`${response.status} ${response.statusText}`.trim());
     }
+
+    return await response.text();
 }
 
 const fetchSavedRepliesFromUrl = async (savedRepliesUrl) => {
