@@ -1,7 +1,7 @@
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     
-    handleCloseSharedSavedRepliesPanel(request, () => {
+    handleCloseTeamSavedRepliesPanel(request, () => {
        
         if(window !== undefined){
 
@@ -55,13 +55,13 @@ document.onreadystatechange = async function() {
 
             const repliesUi = await prepareRepliesUI(currentActiveUrl);
     
-            const sharedSavedRepliesDiv = document.querySelector(`#SharedSavedReplies`);
+            const teamSavedRepliesDiv = document.querySelector(`#TeamSavedReplies`);
             
-            console.log("shared saved replies div",sharedSavedRepliesDiv);
+            console.log("shared saved replies div",teamSavedRepliesDiv);
     
             console.log("repliesUl", repliesUi);
 
-            sharedSavedRepliesDiv.append(repliesUi);
+            teamSavedRepliesDiv.append(repliesUi);
 
             let copyButtons = document.querySelectorAll(".saved-replies-copy-button");
 

@@ -7,9 +7,9 @@ let replies = [];
 let repliesExist = false;
 let repliesUI = [];
 
-const closeSavedRepliesPanelMessage = "CloseSharedSavedRepliesPanel";
+const closeSavedRepliesPanelMessage = "CloseTeamSavedRepliesPanel";
 
-const handleCloseSharedSavedRepliesPanel = (message, handleMessage) =>{
+const handleCloseTeamSavedRepliesPanel = (message, handleMessage) =>{
 
     if (!canHandleCommand(message, SIDE_PANEL, closeSavedRepliesPanelMessage)) {
         return;
@@ -18,7 +18,7 @@ const handleCloseSharedSavedRepliesPanel = (message, handleMessage) =>{
     handleMessage();
 }
 
-const closeSharedSavedRepliesPanel = () =>{
+const closeTeamSavedRepliesPanel = () =>{
 
     const closeSharedReplilesPanelCommand = 
         createCommand(closeSavedRepliesPanelMessage, SIDE_PANEL, {});
@@ -45,4 +45,4 @@ const prepareRepliesUI = async(url) => {
 }
 
 
-export {handleCloseSharedSavedRepliesPanel, closeSharedSavedRepliesPanel, prepareRepliesUI};
+export {handleCloseTeamSavedRepliesPanel, closeTeamSavedRepliesPanel, prepareRepliesUI};

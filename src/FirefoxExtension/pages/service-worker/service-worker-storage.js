@@ -43,9 +43,9 @@ const updateRepliesIndex = async (name) => {
     await chrome.storage.local.set({ [repliesIndexKey]: repliesIndex });
 }
 
-const saveRepliesInLocalStorage = async (name, sharedSavedReplies) => {
+const saveRepliesInLocalStorage = async (name, teamSavedReplies) => {
 
-    if (isNullOrEmpty(sharedSavedReplies)) {
+    if (isNullOrEmpty(teamSavedReplies)) {
         return;
     }
 
@@ -60,7 +60,7 @@ const saveRepliesInLocalStorage = async (name, sharedSavedReplies) => {
     //update the last updated time for shared saved replies
 
     await chrome.storage.local.set({
-        [repliesKey]: sharedSavedReplies,
+        [repliesKey]: teamSavedReplies,
         [lastUpdatedKey]: lastUpdatedAt
     });
 }

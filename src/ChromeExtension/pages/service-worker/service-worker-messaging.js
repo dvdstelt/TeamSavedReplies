@@ -1,16 +1,16 @@
 
-const handleSaveSharedSavedRepliesCommand = async (message, handleMessage) => {
+const handleSaveTeamSavedRepliesCommand = async (message, handleMessage) => {
 
-    if (!canHandleCommand(message, SERVICE_WORKER, `SaveSharedSavedReplies`)) {
+    if (!canHandleCommand(message, SERVICE_WORKER, `SaveTeamSavedReplies`)) {
         return;
     }
 
     await handleMessage(message.data.name, message.data.replies);
 }
 
-const handleOpenSharedSavedRepliesPanel = (message, handleMessage) => {
+const handleOpenTeamSavedRepliesPanel = (message, handleMessage) => {
     
-    if (!canHandleCommand(message, SERVICE_WORKER, `OpenSharedSavedRepliesPanel`)) {
+    if (!canHandleCommand(message, SERVICE_WORKER, `OpenTeamSavedRepliesPanel`)) {
         return;
     }
 

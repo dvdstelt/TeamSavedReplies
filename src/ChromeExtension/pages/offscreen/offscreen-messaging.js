@@ -3,26 +3,26 @@ import { canHandleCommand, createCommand, send } from "../../js/modules/messagin
 const OFFSCREEN = "offscreen";
 const SERVICE_WORKER = "service-worker";
 
-const handleUpdateSharedSavedRepliesCommand = async (message, handleMessage) => {
-    if (!canHandleCommand(message, OFFSCREEN, `UpdateSharedSavedReplies`)) {
+const handleUpdateTeamSavedRepliesCommand = async (message, handleMessage) => {
+    if (!canHandleCommand(message, OFFSCREEN, `UpdateTeamSavedReplies`)) {
         return;
     }
 
     await handleMessage(message.data.name, message.data.url);
 }
 
-const sendSaveSharedSavedRepliesCommand = async (name, sharedSavedReplies) => {
+const sendSaveTeamSavedRepliesCommand = async (name, teamSavedReplies) => {
 
     const command =
         createCommand(
-            `SaveSharedSavedReplies`,
+            `SaveTeamSavedReplies`,
             SERVICE_WORKER,
             {
                 name: name,
-                replies: sharedSavedReplies
+                replies: teamSavedReplies
             });
 
     await send(command);
 }
 
-export { handleUpdateSharedSavedRepliesCommand, sendSaveSharedSavedRepliesCommand}
+export { handleUpdateTeamSavedRepliesCommand, sendSaveTeamSavedRepliesCommand}

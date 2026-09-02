@@ -33,21 +33,21 @@ const addShowSavedRepliesClickHandler = (showSavedRepliesButton) =>{
     showSavedRepliesButton.addEventListener(`click`, () =>{
     
         if(!savedRepliesVisible){
-            const openSavedRepliesPanelMessage = "OpenSharedSavedRepliesPanel";
+            const openSavedRepliesPanelMessage = "OpenTeamSavedRepliesPanel";
 
-            const openSharedSavedRepliesPanelCommand = 
+            const openTeamSavedRepliesPanelCommand = 
                 createCommand(openSavedRepliesPanelMessage, SERVICE_WORKER, {});
 
-            sendNonAsync(openSharedSavedRepliesPanelCommand);
+            sendNonAsync(openTeamSavedRepliesPanelCommand);
 
             savedRepliesVisible = true;
         } else{
-            const closeSavedRepliesPanelMessage = "CloseSharedSavedRepliesPanel";
+            const closeSavedRepliesPanelMessage = "CloseTeamSavedRepliesPanel";
 
-            const closeSharedSavedRepliesPanelCommand = 
+            const closeTeamSavedRepliesPanelCommand = 
                 createCommand(closeSavedRepliesPanelMessage, SIDE_PANEL, {});
     
-            sendNonAsync(closeSharedSavedRepliesPanelCommand);  
+            sendNonAsync(closeTeamSavedRepliesPanelCommand);  
 
             savedRepliesVisible = false;
         } 
