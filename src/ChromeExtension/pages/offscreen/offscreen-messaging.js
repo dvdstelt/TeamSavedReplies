@@ -8,17 +8,17 @@ const handleUpdateTeamSavedRepliesCommand = async (message, handleMessage) => {
         return;
     }
 
-    await handleMessage(message.data.name, message.data.url);
+    await handleMessage(message.data.sourceId, message.data.url);
 }
 
-const sendSaveTeamSavedRepliesCommand = async (name, teamSavedReplies) => {
+const sendSaveTeamSavedRepliesCommand = async (sourceId, teamSavedReplies) => {
 
     const command =
         createCommand(
             `SaveTeamSavedReplies`,
             SERVICE_WORKER,
             {
-                name: name,
+                sourceId: sourceId,
                 replies: teamSavedReplies
             });
 

@@ -1,84 +1,42 @@
-const getConfigFromLocalStorage = async (name) => {
-    
-    const configKey = `${name}-config`;
+const getSourceById = async (sourceId) => {
 
-    const result = await chrome.storage.local.get([configKey]);
+    const sources = await getSources();
 
-    const config = result[configKey];
-
-    return config;
+    return sources.find((source) => source.id === sourceId);
 }
 
-const getUrlForShareSavedRepliesName = async (name) => {
-
-    const configKey = `${name}-config`;
-
-    const result = await chrome.storage.local.get([configKey]);
-
-    const config = result[configKey];
-
-    return config?.url;
-};
-
-
-const updateRepliesIndex = async (name) => {
-
-    const repliesIndexKey = "replies-index";
-
-    let result = await chrome.storage.local.get([repliesIndexKey]);
-
-    let repliesIndex = [];
-
-    if (!isNullOrEmpty(result)) {
-        repliesIndex = result[repliesIndexKey];
-    }
-
-    if (!repliesIndex.includes(name)) {
-        repliesIndex.push(name)
-    }
-
-    await chrome.storage.local.set({ [repliesIndexKey]: repliesIndex });
-}
-
-const saveRepliesInLocalStorage = async (name, teamSavedReplies) => {
+const saveRepliesInLocalStorage = async (sourceId, teamSavedReplies) => {
 
     if (isNullOrEmpty(teamSavedReplies)) {
         return;
     }
 
-    await updateRepliesIndex(name);
-
-    const repliesKey = `${name}-replies`;
-
-    const lastUpdatedKey = `${name}-lastupdated`;
-
-    const lastUpdatedAt = utcNowTicks();
-
-    //update the last updated time for shared saved replies
-
     await chrome.storage.local.set({
-        [repliesKey]: teamSavedReplies,
-        [lastUpdatedKey]: lastUpdatedAt
+        [repliesKeyFor(sourceId)]: teamSavedReplies,
+        [lastUpdatedKeyFor(sourceId)]: utcNowTicks()
     });
 }
 
-const removeDataFromLocalStorage = async (name) => {
+const removeDataFromLocalStorage = async (sourceId) => {
 
-    let repliesKey = `${name}-replies`;
+    await chrome.storage.local.remove([
+        repliesKeyFor(sourceId),
+        lastUpdatedKeyFor(sourceId)
+    ]);
+}
 
-    let lastUpdatedKey = `${name}-lastupdated`;
+// Drops the cached replies of every source that is no longer configured.
+const removeDataForDeletedSources = async (previousSources, currentSources) => {
 
-    let indexKey = `replies-index`;
+    const currentIds = (currentSources ?? []).map((source) => source.id);
 
-    let indexResult = await chrome.storage.local.get(indexKey);
+    for (const previous of previousSources ?? []) {
 
-    let repliesIndex = indexResult[indexKey];
+        if (!currentIds.includes(previous.id)) {
 
-    if (repliesIndex) {
-        repliesIndex = repliesIndex.filter((value) => value !== name);
+            console.log(`source ${previous.id} removed`);
 
-        await chrome.storage.local.set({ [indexKey]: repliesIndex });
+            await removeDataFromLocalStorage(previous.id);
+        }
     }
-
-    await chrome.storage.local.remove([repliesKey, lastUpdatedKey]);
 }

@@ -1,8 +1,7 @@
 
 const isSidebarButtonEnabled = async () => {
-    const result = await chrome.storage.local.get(["settings"]);
-    const settings = result["settings"];
-    return settings?.showSidebarButtonDefault ?? true;
+    const settings = await getGlobalSettings();
+    return settings.showEdgeTab;
 };
 
 const showHideSavedRepliesButton = async (showButton) => {

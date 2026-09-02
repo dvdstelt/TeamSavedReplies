@@ -6,14 +6,14 @@ chrome.runtime.onMessage.addListener( async (request, sender, sendResponse) => {
 
     await handleUpdateTeamSavedRepliesCommand(
         request,       
-        async (name,url) => {
+        async (sourceId,url) => {
             try {                                    
 
                 console.log("offscreen-savedRepliesUrl", url);
 
                 const replies = await fetchSavedRepliesFromUrl(url);
     
-                await sendSaveTeamSavedRepliesCommand(name, replies);    
+                await sendSaveTeamSavedRepliesCommand(sourceId, replies);    
             }
             catch (error){                
                 

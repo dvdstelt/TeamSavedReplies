@@ -203,7 +203,7 @@ const onPrimerReactDialogOpened = async (dialog) => {
     console.log("onPrimerReactDialogOpened: dialog detected");
 
     if (!_cachedSavedReplies) {
-        _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
+        _cachedSavedReplies = await getTemplatesForUrl(null);
     }
 
     if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) return;
@@ -369,7 +369,7 @@ const onLegacyDialogDetected = (dialog) => {
 
 const onLegacyDialogReady = async (actualDialog) => {
     if (!_cachedSavedReplies) {
-        _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
+        _cachedSavedReplies = await getTemplatesForUrl(null);
     }
 
     if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) return;

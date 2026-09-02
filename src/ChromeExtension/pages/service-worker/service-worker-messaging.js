@@ -5,7 +5,7 @@ const handleSaveTeamSavedRepliesCommand = async (message, handleMessage) => {
         return;
     }
 
-    await handleMessage(message.data.name, message.data.replies);
+    await handleMessage(message.data.sourceId, message.data.replies);
 }
 
 const handleOpenTeamSavedRepliesPanel = (message, handleMessage) => {
