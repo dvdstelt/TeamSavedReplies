@@ -96,7 +96,7 @@ const createHeader = ({ subline, onOpenOptions }) => {
     });
 }
 
-const createSearchField = ({ placeholder, onInput }) => {
+const createSearchField = ({ placeholder, onInput, option }) => {
 
     const input = createElement("input", {
         className: "tsr-search-input",
@@ -107,15 +107,55 @@ const createSearchField = ({ placeholder, onInput }) => {
 
     input.addEventListener("input", (event) => onInput(event.target.value));
 
-    return createElement("div", {
-        children: [
-            createElement("div", {
-                children: [createSearchIcon(), input],
-                className: "tsr-search-field"
-            })
-        ],
-        className: "tsr-search"
-    });
+    const children = [
+        createElement("div", {
+            children: [createSearchIcon(), input],
+            className: "tsr-search-field"
+        })
+    ];
+
+    if (option) {
+
+        const checkbox = createElement("input", {
+            className: "tsr-search-checkbox",
+            type: "checkbox",
+            id: "tsr-search-option"
+        });
+
+        checkbox.checked = option.checked === true;
+
+        checkbox.addEventListener("change", (event) => option.onToggle(event.target.checked));
+
+        children.push(createElement("label", {
+            children: [
+                checkbox,
+                createElement("span", {
+                    children: [option.label],
+                    className: "tsr-search-option-label"
+                })
+            ],
+            className: "tsr-search-option",
+            for: "tsr-search-option"
+        }));
+    }
+
+    return createElement("div", { children: children, className: "tsr-search" });
+}
+
+// The placeholder says what the filter currently covers, so a checked box is
+// never contradicted by the field beside it.
+const describeSearchPlaceholder = (searchInsideContent) =>
+    searchInsideContent ? "Filter names and content" : "Filter template names";
+
+const setSearchPlaceholder = (searchInsideContent) => {
+
+    const input = document.querySelector(".tsr-search-input");
+
+    if (input) {
+
+        input.placeholder = describeSearchPlaceholder(searchInsideContent);
+        input.setAttribute("aria-label", input.placeholder);
+    }
 }
 
 const createGroupHeader = ({ name, count, collapsible, collapsed, onToggle }) => {
@@ -189,7 +229,7 @@ const createTemplateRow = ({ template, badge, onActivate }) => {
     return row;
 }
 
-const createEmptyState = (query) =>
+const createEmptyState = (query, searchInsideContent) =>
     createElement("div", {
         children: [
             createElement("div", {
@@ -197,7 +237,9 @@ const createEmptyState = (query) =>
                 className: "tsr-empty-title"
             }),
             createElement("div", {
-                children: ["Filtering runs over template names and bodies."],
+                children: [searchInsideContent
+                    ? "Filtering runs over template names and content."
+                    : "Filtering runs over template names. Tick the box above to include content."],
                 className: "tsr-empty-hint"
             })
         ],
@@ -229,7 +271,7 @@ const createSegmentedControl = ({ options, value, compact, onChange }) => {
     return wrapper;
 }
 
-const matchesTemplateQuery = (template, query) => {
+const matchesTemplateQuery = (template, query, searchInsideContent) => {
 
     if (!query) {
         return true;
@@ -237,8 +279,12 @@ const matchesTemplateQuery = (template, query) => {
 
     const needle = query.toLowerCase();
 
-    return template.name.toLowerCase().includes(needle)
-        || (template.body ?? "").toLowerCase().includes(needle);
+    if (template.name.toLowerCase().includes(needle)) {
+        return true;
+    }
+
+    return searchInsideContent === true
+        && (template.body ?? "").toLowerCase().includes(needle);
 }
 
 const TICKS_EPOCH_OFFSET = 621355968000000000;

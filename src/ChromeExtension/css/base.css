@@ -303,3 +303,52 @@ input {
     height: 32px;
     padding: 0 14px;
 }
+
+/* Opt in to searching template bodies. Square, flat, ink on white like the rest
+   of the controls - the native checkbox is restyled rather than replaced so it
+   stays keyboard reachable. */
+.tsr-search-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.tsr-search-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: none;
+    display: grid;
+    place-content: center;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    border: 1px solid var(--ink);
+    background: #ffffff;
+    cursor: pointer;
+}
+
+.tsr-search-checkbox::after {
+    content: "";
+    width: 7px;
+    height: 3px;
+    border-left: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: translateY(-1px) rotate(-45deg);
+    opacity: 0;
+}
+
+.tsr-search-checkbox:checked {
+    background: var(--ink);
+}
+
+.tsr-search-checkbox:checked::after {
+    opacity: 1;
+}
+
+.tsr-search-option-label {
+    font-size: 12px;
+    color: var(--neutral-800);
+    cursor: pointer;
+}

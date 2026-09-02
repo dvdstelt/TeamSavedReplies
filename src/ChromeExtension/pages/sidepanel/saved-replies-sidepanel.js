@@ -2,6 +2,7 @@ let groups = [];
 let activeTabUrl;
 let recentlyUsedIds = [];
 let query = ``;
+let searchInsideContent = false;
 
 const allTemplates = () => groups.flatMap((group) => group.templates);
 
@@ -73,12 +74,12 @@ const renderList = () => {
 
     const matchingGroups = groups.map((group) => ({
         source: group.source,
-        templates: group.templates.filter((template) => matchesTemplateQuery(template, query))
+        templates: group.templates.filter((template) => matchesTemplateQuery(template, query, searchInsideContent))
     }));
 
     if (query && !matchingGroups.some((group) => group.templates.length > 0)) {
 
-        list.append(createEmptyState(query));
+        list.append(createEmptyState(query, searchInsideContent));
 
         return;
     }
@@ -169,13 +170,25 @@ const initialize = async () => {
 
     recentlyUsedIds = await getRecentlyUsed();
 
+    searchInsideContent = await getSearchInsideContent();
+
     const panel = document.getElementById(`TeamSavedReplies`);
 
     panel.append(
         createHeader({ onOpenOptions: () => chrome.runtime.openOptionsPage() }),
         createSearchField({
-            placeholder: `Filter name or body`,
-            onInput: (value) => { query = value; renderList(); }
+            placeholder: describeSearchPlaceholder(searchInsideContent),
+            onInput: (value) => { query = value; renderList(); },
+            option: {
+                label: `Also search inside template content`,
+                checked: searchInsideContent,
+                onToggle: async (checked) => {
+                    searchInsideContent = checked;
+                    setSearchPlaceholder(checked);
+                    await saveSearchInsideContent(checked);
+                    renderList();
+                }
+            }
         }),
         createElement(`div`, { className: `tsr-list` }));
 

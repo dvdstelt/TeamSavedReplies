@@ -2,6 +2,7 @@ const SOURCES_KEY = `sources`;
 const SETTINGS_KEY = `settings`;
 const RECENTLY_USED_KEY = `recentlyUsed`;
 const COLLAPSED_GROUPS_KEY = `collapsedGroups`;
+const SEARCH_INSIDE_CONTENT_KEY = `searchInsideContent`;
 const EDGE_TAB_POSITION_KEY = `edgeTabPosition`;
 
 const DEFAULT_REFRESH_RATE_IN_MINUTES = 30;
@@ -260,4 +261,18 @@ const saveTemplatesForSource = async (sourceId, replies) => {
 const saveSyncStatusForSource = async (sourceId, status) => {
 
     await chrome.storage.local.set({ [syncStatusKeyFor(sourceId)]: status });
+}
+
+// Searching bodies as well as names is opt in, and the choice is remembered so
+// it does not have to be made on every open. It starts off.
+const getSearchInsideContent = async () => {
+
+    const result = await chrome.storage.local.get([SEARCH_INSIDE_CONTENT_KEY]);
+
+    return result[SEARCH_INSIDE_CONTENT_KEY] === true;
+}
+
+const saveSearchInsideContent = async (searchInsideContent) => {
+
+    await chrome.storage.local.set({ [SEARCH_INSIDE_CONTENT_KEY]: searchInsideContent === true });
 }

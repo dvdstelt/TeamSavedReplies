@@ -2,6 +2,7 @@ let groups = [];
 let activeTabUrl;
 let collapsedGroups = {};
 let query = ``;
+let searchInsideContent = false;
 
 const describeHeaderSubline = () => {
 
@@ -49,7 +50,7 @@ const renderList = () => {
     const matchingGroups = groups
         .map((group) => ({
             source: group.source,
-            templates: group.templates.filter((template) => matchesTemplateQuery(template, query))
+            templates: group.templates.filter((template) => matchesTemplateQuery(template, query, searchInsideContent))
         }))
         .filter((group) => group.templates.length > 0 || !query);
 
@@ -57,7 +58,7 @@ const renderList = () => {
 
     if (query && !anyMatches) {
 
-        list.append(createEmptyState(query));
+        list.append(createEmptyState(query, searchInsideContent));
 
         return;
     }
@@ -141,6 +142,8 @@ const initialize = async () => {
 
     collapsedGroups = await getCollapsedGroups();
 
+    searchInsideContent = await getSearchInsideContent();
+
     const sources = await getSources();
 
     const popup = document.getElementById(`popup`);
@@ -151,8 +154,18 @@ const initialize = async () => {
             onOpenOptions: () => chrome.runtime.openOptionsPage()
         }),
         createSearchField({
-            placeholder: `Filter templates`,
-            onInput: (value) => { query = value; renderList(); }
+            placeholder: describeSearchPlaceholder(searchInsideContent),
+            onInput: (value) => { query = value; renderList(); },
+            option: {
+                label: `Also search inside template content`,
+                checked: searchInsideContent,
+                onToggle: async (checked) => {
+                    searchInsideContent = checked;
+                    setSearchPlaceholder(checked);
+                    await saveSearchInsideContent(checked);
+                    renderList();
+                }
+            }
         }),
         createElement(`div`, { className: `tsr-list` }),
         createElement(`div`, {
