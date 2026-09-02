@@ -112,9 +112,15 @@ input {
 /* ---- Search ------------------------------------------------------------- */
 
 .tsr-search {
-    position: relative;
     padding: 12px 16px;
     border-bottom: 1px solid var(--neutral-300);
+}
+
+/* The glyph is placed against the input, not the padded band around it, so its
+   offset is measured from the field's own left edge. */
+.tsr-search-field {
+    position: relative;
+    display: flex;
 }
 
 .tsr-search-icon {

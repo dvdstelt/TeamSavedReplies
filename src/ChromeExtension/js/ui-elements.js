@@ -108,7 +108,12 @@ const createSearchField = ({ placeholder, onInput }) => {
     input.addEventListener("input", (event) => onInput(event.target.value));
 
     return createElement("div", {
-        children: [createSearchIcon(), input],
+        children: [
+            createElement("div", {
+                children: [createSearchIcon(), input],
+                className: "tsr-search-field"
+            })
+        ],
         className: "tsr-search"
     });
 }
