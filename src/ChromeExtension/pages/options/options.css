@@ -335,3 +335,35 @@ body {
     background: none;
     cursor: default;
 }
+
+/* An indeterminate 2px accent rule sweeping along the header divider: motion
+   that fits a flat, square system without introducing a spinner. */
+.options-source-header {
+    position: relative;
+    overflow: hidden;
+}
+
+.options-source-header.syncing::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: -30%;
+    width: 30%;
+    height: 2px;
+    background: var(--accent);
+    animation: tsr-sweep 900ms linear infinite;
+}
+
+@keyframes tsr-sweep {
+    from { left: -30%; }
+    to { left: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .options-source-header.syncing::after {
+        animation: none;
+        left: 0;
+        width: 100%;
+    }
+}

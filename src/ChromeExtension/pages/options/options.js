@@ -46,6 +46,9 @@ const paintSyncStatus = (sourceId, status) => {
     element.textContent = described.text;
 
     element.className = `options-source-status${described.isError ? ` error` : ``}`;
+
+    element.closest(`.options-source-header`)
+        ?.classList?.toggle(`syncing`, status?.state === `syncing`);
 }
 
 const loadSyncStatuses = async () => {
