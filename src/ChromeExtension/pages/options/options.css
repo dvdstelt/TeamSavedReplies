@@ -1,3 +1,303 @@
-.options.dialogHeader.dialogHeaderButtonsEnabled.icon.titleEnabled>.dialogHeaderInner {
-    text-align: center;
+body {
+    width: 860px;
+    margin: 0 auto;
+}
+
+/* ---- Page header -------------------------------------------------------- */
+
+.options-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 22px 28px 16px;
+    border-bottom: 2px solid var(--ink);
+}
+
+.options-kicker {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--neutral-600);
+}
+
+.options-title {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.options-version {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--neutral-700);
+}
+
+/* ---- Global strip ------------------------------------------------------- */
+
+.options-global {
+    padding: 22px 28px 24px;
+    border-bottom: 2px solid var(--ink);
+}
+
+.options-section-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+
+.options-global-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+}
+
+.options-field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.options-helper {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--neutral-700);
+}
+
+.options-warning {
+    margin-top: 8px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--accent-700);
+}
+
+/* ---- Inputs ------------------------------------------------------------- */
+
+.options-text-input {
+    width: 100%;
+    height: 34px;
+    border: 1px solid var(--ink);
+    background: #ffffff;
+    font-size: 13px;
+    padding: 0 10px;
+    outline: none;
+}
+
+.options-mono-input {
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.options-number-input {
+    width: 110px;
+    height: 34px;
+    border: 1px solid var(--ink);
+    background: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 0 10px;
+    outline: none;
+}
+
+/* The owner field reads as one control: a fixed prefix, the name, a trailing
+   slash - so there is nothing to get wrong about the format. */
+.options-owner-field {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    border: 1px solid var(--ink);
+    background: #ffffff;
+    width: fit-content;
+}
+
+.options-owner-prefix,
+.options-owner-suffix {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--neutral-600);
+}
+
+.options-owner-prefix {
+    padding-left: 10px;
+}
+
+.options-owner-suffix {
+    padding-right: 10px;
+}
+
+.options-owner-input {
+    width: 190px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 0 2px;
+}
+
+/* ---- Sources ------------------------------------------------------------ */
+
+.options-sources-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 28px 8px;
+}
+
+.options-sources-count {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--neutral-700);
+}
+
+.options-source {
+    margin: 0 28px 18px;
+    border-top: 2px solid var(--ink);
+    background: var(--surface);
+}
+
+.options-source-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--neutral-300);
+}
+
+.options-source-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.options-source-index {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--neutral-700);
+}
+
+.options-source-name {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.options-source-remove {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-700);
+    padding: 4px 6px;
+}
+
+.options-source-remove:hover {
+    background: var(--accent-200);
+}
+
+.options-source-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 16px;
+}
+
+.options-source-identity {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 16px;
+}
+
+.options-source-block {
+    border-top: 1px solid var(--neutral-300);
+    padding-top: 16px;
+}
+
+.options-applies-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* ---- Add source --------------------------------------------------------- */
+
+.options-add-source-row {
+    padding: 0 28px 24px;
+}
+
+.options-add-source {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 38px;
+    padding: 0 14px;
+    border: 2px solid var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.options-add-source:hover {
+    background: var(--ink);
+    color: #ffffff;
+}
+
+.options-add-source:hover path {
+    fill: #ffffff;
+}
+
+/* ---- Action bar --------------------------------------------------------- */
+
+.options-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 2px solid var(--ink);
+    padding: 16px 28px;
+}
+
+.options-button {
+    height: 38px;
+    padding: 0 18px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.options-button.primary {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.options-button.primary:hover {
+    background: var(--accent-600);
+}
+
+.options-button.ghost {
+    border: 1px solid var(--ink);
+    background: transparent;
+}
+
+.options-button.ghost:hover {
+    background: var(--accent-200);
+}
+
+.options-last-sync {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--neutral-700);
 }

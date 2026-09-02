@@ -3,7 +3,6 @@ importScripts(["../../js/message-receivers.js"]);
 importScripts(["../../js/time.js"]);
 importScripts(["../../js/null.js"]);
 importScripts(["../../js/tabs.js"]);
-importScripts(["../../js/elements.js"]);
 importScripts(["../../js/urls.js"]);
 importScripts(["../../js/team-sources.js"]);
 importScripts(["../../js/events.js"]);

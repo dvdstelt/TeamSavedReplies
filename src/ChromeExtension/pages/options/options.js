@@ -1,112 +1,371 @@
-import { themes, getCurrentTheme, applyTheme, applyCurrentTheme } from "../../js/modules/theme.js";
-import { getSettings, saveSettings } from "../../js/modules/settings.js";
+// Everything is edited against a working copy and committed on Save.
+let workingSources = [];
+let workingSettings = { refreshRateInMinutes: DEFAULT_REFRESH_RATE_IN_MINUTES, showEdgeTab: true };
 
+const stripGitHubPrefix = (value) =>
+    value.replace(/^https?:\/\/github\.com\//i, ``).replace(/\/$/, ``);
 
-const getFormValues = () => {
+const createLabelledField = (labelText, control, helperText) => {
 
-    return {
-        theme: document.getElementById(`theme`).value,
-        allowEverywhereDefault: document.getElementById(`allowEverywhere`).checked,
-        limitToGitHubOwnerDefault: document.getElementById('limitToGitHubOwner').value,
-        includeIssuesDefault: document.getElementById(`includeIssues`).checked,
-        includePullRequestsDefault: document.getElementById(`includePullRequests`).checked,
-        refreshRateInMinutesDefault: document.getElementById(`refreshRateInMinutes`).value,
-        showSidebarButtonDefault: document.getElementById(`showSidebarButton`).checked,
-    };
-}
+    const children = [
+        createElement(`label`, { children: [labelText], className: `options-field-label` }),
+        control
+    ];
 
-const close = async () => {
-    await chrome.tabs.getCurrent((tab) => chrome.tabs.remove(tab.id));
-}
+    if (helperText) {
 
-const save = async () => {
-
-    const formValues = getFormValues();
-
-    await saveSettings(formValues);
-
-    await close();
-}
-
-const tryEnableLimitToGitHubOwner = () => {
-
-    const allowEverywhere = document.getElementById(`allowEverywhere`);
-    const limitToGitHubOwner = document.getElementById(`limitToGitHubOwner`);
-
-    if (!allowEverywhere.checked) {
-        limitToGitHubOwner.setAttribute(`required`, ``);
-        limitToGitHubOwner.removeAttribute(`disabled`, ``);
-    } else {
-        limitToGitHubOwner.removeAttribute(`required`);
-        limitToGitHubOwner.setAttribute(`disabled`, ``);
-    }
-}
-
-const capiatlizeWord = (word) =>{
-
-    
-    const firstLetter = word.charAt(0)
-
-    const firstLetterCap = firstLetter.toUpperCase()
-
-    const remainingLetters = word.slice(1)
-
-    const capitalizedWord = firstLetterCap + remainingLetters
-
-    return capitalizedWord;
-}
-
-const loadForm = async () => {
-
-    const settings = await getSettings();
-   
-    document.getElementById(`allowEverywhere`).checked = settings.allowEverywhere;
-    document.getElementById('limitToGitHubOwner').value = settings.limitToGitHubOwner;
-    document.getElementById(`includeIssues`).checked = settings.includeIssues;
-    document.getElementById(`includePullRequests`).checked = settings.includePullRequests;
-    document.getElementById(`refreshRateInMinutes`).value = Number(settings.refreshRateInMinutes);
-    document.getElementById(`showSidebarButton`).checked = settings.showSidebarButton ?? true;
-
-    const themesElement = document.querySelector(`select`);
-
-    for (let theme of themes) {
-
-        var option = document.createElement('option');
-
-        option.value = theme;
-
-        option.innerHTML = capiatlizeWord(theme);
-
-        themesElement.appendChild(option);
+        children.push(
+            createElement(`div`, { children: [helperText], className: `options-helper` }));
     }
 
-    document.getElementById(`theme`).value = await getCurrentTheme();
-
-    themesElement.addEventListener(`change`, async (event) => await applyTheme(event.target.value));
-
-    document.getElementById(`allowEverywhere`)
-        .addEventListener(`click`, () => tryEnableLimitToGitHubOwner());
-    
-    tryEnableLimitToGitHubOwner()
-
-    document.getElementById(`close`)
-        .addEventListener(`click`, async () => await close());
-
-    document.getElementById(`cancel`)
-        .addEventListener(`click`, async () => await close());
-
-    document.getElementById(`save`)
-        .addEventListener(`click`, async () => await save());
-
-    await applyCurrentTheme();
+    return createElement(`div`, { children: children });
 }
 
-const initialize = async () => {
+const createOnOffControl = (value, onChange) =>
+    createSegmentedControl({
+        options: [{ label: `On`, value: true }, { label: `Off`, value: false }],
+        value: value,
+        compact: true,
+        onChange: onChange
+    });
 
-    console.log("options init");
+const createOwnerField = (source) => {
 
-    await loadForm();
+    const input = createElement(`input`, {
+        className: `options-owner-input`,
+        type: `text`,
+        value: source.owner,
+        placeholder: `[organization]`,
+        "aria-label": `Organization or user`
+    });
 
+    // Pasting a full organization URL leaves just the name behind.
+    input.addEventListener(`input`, (event) => {
+
+        const stripped = stripGitHubPrefix(event.target.value);
+
+        if (stripped !== event.target.value) {
+
+            event.target.value = stripped;
+        }
+
+        source.owner = stripped;
+
+        updateOwnerWarning(input, source);
+    });
+
+    return createElement(`div`, {
+        children: [
+            createElement(`span`, { children: [`https://github.com/`], className: `options-owner-prefix` }),
+            input,
+            createElement(`span`, { children: [`/`], className: `options-owner-suffix` })
+        ],
+        className: `options-owner-field`
+    });
 }
 
-await initialize();
+const updateOwnerWarning = (input, source) => {
+
+    const block = input.closest(`.options-source-block`);
+
+    const existing = block.querySelector(`.options-warning`);
+
+    if (source.owner) {
+
+        existing?.remove();
+
+        return;
+    }
+
+    if (existing) {
+        return;
+    }
+
+    block.append(createElement(`div`, {
+        children: [`Without an organization or user this source will not show anywhere.`],
+        className: `options-warning`
+    }));
+}
+
+const createScopeBlock = (source) => {
+
+    const scopeControl = createSegmentedControl({
+        options: [
+            { label: `All of GitHub`, value: `all` },
+            { label: `One organization or user`, value: `orgs` }
+        ],
+        value: source.scope,
+        compact: true,
+        onChange: (value) => { source.scope = value; render(); }
+    });
+
+    const children = [
+        createElement(`label`, {
+            children: [`Where this source applies`],
+            className: `options-field-label`
+        }),
+        scopeControl
+    ];
+
+    if (source.scope === `orgs`) {
+
+        children.push(
+            createElement(`div`, { children: [createOwnerField(source)], style: `margin-top: 14px` }),
+            createElement(`div`, {
+                children: [`Paste the full organization or user URL and the prefix is stripped for you.`],
+                className: `options-helper`
+            }));
+    }
+
+    const block = createElement(`div`, { children: children, className: `options-source-block` });
+
+    if (source.scope === `orgs` && !source.owner) {
+
+        block.append(createElement(`div`, {
+            children: [`Without an organization or user this source will not show anywhere.`],
+            className: `options-warning`
+        }));
+    }
+
+    return block;
+}
+
+const createSourcePanel = (source, index) => {
+
+    const nameInput = createElement(`input`, {
+        className: `options-text-input`,
+        type: `text`,
+        value: source.name,
+        placeholder: `Particular`,
+        "aria-label": `Name`
+    });
+
+    const heading = createElement(`span`, {
+        children: [source.name || `Untitled source`],
+        className: `options-source-name`
+    });
+
+    nameInput.addEventListener(`input`, (event) => {
+
+        source.name = event.target.value;
+
+        heading.textContent = source.name || `Untitled source`;
+    });
+
+    const urlInput = createElement(`input`, {
+        className: `options-text-input options-mono-input`,
+        type: `text`,
+        value: source.url,
+        placeholder: `https://github.com/Particular/docs/blob/main/saved-replies.md`,
+        "aria-label": `Templates URL`
+    });
+
+    urlInput.addEventListener(`input`, (event) => { source.url = event.target.value; });
+
+    const remove = createElement(`button`, {
+        children: [`Remove`],
+        className: `options-source-remove`,
+        type: `button`
+    });
+
+    remove.addEventListener(`click`, () => {
+
+        workingSources = workingSources.filter((candidate) => candidate !== source);
+
+        render();
+    });
+
+    return createElement(`div`, {
+        children: [
+            createElement(`div`, {
+                children: [
+                    createElement(`div`, {
+                        children: [
+                            createElement(`span`, {
+                                children: [String(index + 1).padStart(2, `0`)],
+                                className: `options-source-index`
+                            }),
+                            heading
+                        ],
+                        className: `options-source-heading`
+                    }),
+                    remove
+                ],
+                className: `options-source-header`
+            }),
+            createElement(`div`, {
+                children: [
+                    createElement(`div`, {
+                        children: [
+                            createLabelledField(`Name`, nameInput),
+                            createLabelledField(`Templates URL`, urlInput,
+                                `The GitHub page for the .md file, not the raw URL. Private repos work if you can read them.`)
+                        ],
+                        className: `options-source-identity`
+                    }),
+                    createScopeBlock(source),
+                    createElement(`div`, {
+                        children: [
+                            createElement(`div`, {
+                                children: [
+                                    createLabelledField(`Applies to issues`,
+                                        createOnOffControl(source.issues !== false,
+                                            (value) => { source.issues = value; render(); })),
+                                    createLabelledField(`Applies to pull requests`,
+                                        createOnOffControl(source.prs !== false,
+                                            (value) => { source.prs = value; render(); }))
+                                ],
+                                className: `options-applies-grid`
+                            })
+                        ],
+                        className: `options-source-block`
+                    })
+                ],
+                className: `options-source-body`
+            })
+        ],
+        className: `options-source`
+    });
+}
+
+const createGlobalStrip = () => {
+
+    const refreshInput = createElement(`input`, {
+        className: `options-number-input`,
+        type: `number`,
+        min: `1`,
+        max: `1440`,
+        value: String(workingSettings.refreshRateInMinutes),
+        "aria-label": `Refresh rate in minutes`
+    });
+
+    refreshInput.addEventListener(`input`, (event) => {
+
+        workingSettings.refreshRateInMinutes = event.target.value;
+    });
+
+    return createElement(`div`, {
+        children: [
+            createElement(`div`, { children: [`Global`], className: `options-section-label` }),
+            createElement(`div`, {
+                children: [
+                    createLabelledField(`Refresh rate in minutes`, refreshInput,
+                        `How often every source is re-fetched and cached. A refresh takes a few hundred milliseconds.`),
+                    createLabelledField(`Show edge tab on GitHub`,
+                        createOnOffControl(workingSettings.showEdgeTab,
+                            (value) => { workingSettings.showEdgeTab = value; render(); }),
+                        `Off still leaves the replies in GitHub's own saved-replies dialog and in the extension popup.`)
+                ],
+                className: `options-global-grid`
+            })
+        ],
+        className: `options-global`
+    });
+}
+
+const createActionBar = (lastSyncedAt) => {
+
+    const save = createElement(`button`, {
+        children: [`Save`],
+        className: `options-button primary`,
+        type: `button`
+    });
+
+    save.addEventListener(`click`, async () => {
+
+        await saveSources(workingSources);
+
+        await saveGlobalSettings(workingSettings);
+
+        await load();
+    });
+
+    const cancel = createElement(`button`, {
+        children: [`Cancel`],
+        className: `options-button ghost`,
+        type: `button`
+    });
+
+    cancel.addEventListener(`click`, async () => await load());
+
+    return createElement(`div`, {
+        children: [
+            save,
+            cancel,
+            createElement(`div`, {
+                children: [`Last ${describeMinutesSince(lastSyncedAt)}`],
+                className: `options-last-sync`
+            })
+        ],
+        className: `options-actions`
+    });
+}
+
+let lastSyncedAt = null;
+
+const render = () => {
+
+    const root = document.getElementById(`options`);
+
+    const addSource = createElement(`button`, {
+        children: [createPlusIcon(), createElement(`span`, { children: [`Add source`] })],
+        className: `options-add-source`,
+        type: `button`
+    });
+
+    addSource.addEventListener(`click`, () => {
+
+        workingSources.push(createEmptySource());
+
+        render();
+    });
+
+    root.replaceChildren(
+        createElement(`div`, {
+            children: [
+                createElement(`div`, {
+                    children: [
+                        createElement(`div`, {
+                            children: [`Team Saved Replies`],
+                            className: `options-kicker`
+                        }),
+                        createElement(`h1`, { children: [`Settings`], className: `options-title` })
+                    ]
+                }),
+                createElement(`div`, {
+                    children: [`v${chrome.runtime.getManifest().version}`],
+                    className: `options-version`
+                })
+            ],
+            className: `options-header`
+        }),
+        createGlobalStrip(),
+        createElement(`div`, {
+            children: [
+                createElement(`div`, { children: [`Sources`], className: `options-section-label` }),
+                createElement(`div`, {
+                    children: [
+                        `${workingSources.length} ${workingSources.length === 1 ? `source` : `sources`}`
+                    ],
+                    className: `options-sources-count`
+                })
+            ],
+            className: `options-sources-head`
+        }),
+        ...workingSources.map(createSourcePanel),
+        createElement(`div`, { children: [addSource], className: `options-add-source-row` }),
+        createActionBar(lastSyncedAt));
+}
+
+const load = async () => {
+
+    workingSources = (await getSources()).map((source) => ({ ...source }));
+
+    workingSettings = await getGlobalSettings();
+
+    lastSyncedAt = await getLastSyncedAt();
+
+    render();
+}
+
+load();
