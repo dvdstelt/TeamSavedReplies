@@ -38,10 +38,9 @@
     flex: none;
     width: 16px;
     height: 16px;
-    /* The handoff's prose says this reads white, but the icon is #00729c rather
-       than black so inverting it gives salmon. That is what the prototype and
-       the screenshot show, and it is the agreed look. */
-    filter: invert(1);
+    /* No filter: the icon is full colour artwork meant for the ink tab. The
+       handoff inverted a flat single-colour glyph, which would turn this one's
+       white bubble black. */
     pointer-events: none;
 }
 
