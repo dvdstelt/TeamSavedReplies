@@ -117,3 +117,81 @@ const getLastSyncedAt = async () => {
 
     return mostRecent;
 }
+
+const createSourceId = () => `src-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+const createEmptySource = () => ({
+    id: createSourceId(),
+    name: ``,
+    url: ``,
+    scope: `all`,
+    owner: ``,
+    issues: true,
+    prs: true
+});
+
+const saveSources = async (sources) => {
+
+    await chrome.storage.local.set({ [SOURCES_KEY]: sources });
+}
+
+const saveGlobalSettings = async (settings) => {
+
+    await chrome.storage.local.set({
+        [SETTINGS_KEY]: {
+            refreshRateInMinutes: Number(settings.refreshRateInMinutes) || DEFAULT_REFRESH_RATE_IN_MINUTES,
+            showEdgeTab: settings.showEdgeTab ?? true
+        }
+    });
+}
+
+const getRecentlyUsed = async () => {
+
+    const result = await chrome.storage.local.get([RECENTLY_USED_KEY]);
+
+    const recentlyUsed = result[RECENTLY_USED_KEY];
+
+    return Array.isArray(recentlyUsed) ? recentlyUsed : [];
+}
+
+// Most recent first, de-duplicated, capped. Maintained on copy; there is no
+// favouriting UI.
+const pushRecentlyUsed = async (templateId) => {
+
+    const recentlyUsed = await getRecentlyUsed();
+
+    const updated = [templateId, ...recentlyUsed.filter((id) => id !== templateId)]
+        .slice(0, RECENTLY_USED_LIMIT);
+
+    await chrome.storage.local.set({ [RECENTLY_USED_KEY]: updated });
+
+    return updated;
+}
+
+const getCollapsedGroups = async () => {
+
+    const result = await chrome.storage.local.get([COLLAPSED_GROUPS_KEY]);
+
+    return result[COLLAPSED_GROUPS_KEY] ?? {};
+}
+
+const setGroupCollapsed = async (sourceId, collapsed) => {
+
+    const collapsedGroups = await getCollapsedGroups();
+
+    collapsedGroups[sourceId] = collapsed;
+
+    await chrome.storage.local.set({ [COLLAPSED_GROUPS_KEY]: collapsedGroups });
+}
+
+const getEdgeTabPosition = async () => {
+
+    const result = await chrome.storage.local.get([EDGE_TAB_POSITION_KEY]);
+
+    return result[EDGE_TAB_POSITION_KEY];
+}
+
+const saveEdgeTabPosition = async (topInPixels) => {
+
+    await chrome.storage.local.set({ [EDGE_TAB_POSITION_KEY]: topInPixels });
+}
