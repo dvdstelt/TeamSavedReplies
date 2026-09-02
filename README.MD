@@ -2,7 +2,7 @@
 
 Team Saved Replies is a browser extension that allows teams to create `saved replies` for use on GitHub.com. It will populate the saved replies list when adding a new comment to an issue or pull request in a GitHub repository. For teams continuously evolving the structure and requirements of their saved replies templates this extension will keep the saved replies up to date, by updating and caching them on a schedule set up the user.
 
-![Saved Replies Example](https://github.com/dvdstelt/SharedSavedReplies/blob/main/src/ChromeExtension/images/main_screen_shot.png)
+![Saved Replies Example](https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/images/main_screen_shot.png)
 
 ## Where do I get it?
 
@@ -71,7 +71,7 @@ These replies are to be used by our team to facilitate consistent communication.
 1. Click on the pinned extension icon.
 1. Click the plus button. 
 
-![Popup Screen](https://github.com/dvdstelt/SharedSavedReplies/blob/main/src/ChromeExtension/images/popup.png)
+![Popup Screen](https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/images/popup.png)
 
 1. For "Saved Replies Url": Enter the GitHub url of the the saved replies .md file that was created prevoulsy. (This should not be the raw url).
 1. For "Name", Provide a unique name for the configuration. 
@@ -81,7 +81,7 @@ These replies are to be used by our team to facilitate consistent communication.
 1. Set the refresh rate of how often the saved replies will be updated. The default is every 30 minutes. (This process only takes a few hundred milliseconds to perform.)
 1. Click save.
 
-![Add Saved Replies Screen](https://github.com/dvdstelt/SharedSavedReplies/blob/main/src/ChromeExtension/images/Add_Screen.png)
+![Add Saved Replies Screen](https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/images/Add_Screen.png)
 
 
 #### Use the saved replies

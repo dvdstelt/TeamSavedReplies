@@ -403,4 +403,7 @@ FodyWeavers.xsd
 *.msp
 
 # JetBrains Rider
-*.sln.imlteam-saved-replies-*.zip
+*.sln.iml
+
+# Locally built extension packages
+team-saved-replies-*.zip
