@@ -65,14 +65,13 @@
       "pages/sidepanel/*.svg"
     ],
     "matches":[
-      "<all_urls>"
+      "https://github.com/*"
     ]
   }],
   "permissions": [
     "sidePanel",
     "activeTab",
     "tabs",
-    "scripting",
     "webNavigation",
     "alarms",
     "storage",
