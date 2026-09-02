@@ -38,11 +38,10 @@
     flex: none;
     width: 16px;
     height: 16px;
-    /* The handoff asks for invert(1) "so it reads white on ink", but the icon
-       is #00729c rather than black, and inverting blue gives salmon. Flattening
-       to black first is what actually produces the white glyph it describes,
-       and keeps the accent red to the 2px rule as the palette intends. */
-    filter: brightness(0) invert(1);
+    /* The handoff's prose says this reads white, but the icon is #00729c rather
+       than black so inverting it gives salmon. That is what the prototype and
+       the screenshot show, and it is the agreed look. */
+    filter: invert(1);
     pointer-events: none;
 }
 
