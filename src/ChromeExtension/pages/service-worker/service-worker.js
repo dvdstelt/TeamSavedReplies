@@ -59,14 +59,29 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
 });
 
-const sendUpdateTeamSavedRepliesCommand = async (sourceId, url) => {
+const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-    const command =
-        createCommand(`UpdateTeamSavedReplies`, OFFSCREEN, { sourceId: sourceId, url: url });
+// A freshly created offscreen document does not always have its message listener
+// registered by the time createDocument resolves, and the first send is then lost.
+// Retrying briefly is what makes a sync on first configure actually land.
+const sendToOffscreenDocument = async (command, attempts = 5) => {
 
-    await send(command);
+    for (let attempt = 1; attempt <= attempts; attempt++) {
 
-    return true;
+        try {
+            return await chrome.runtime.sendMessage(command);
+        }
+        catch (error) {
+
+            if (attempt === attempts) {
+                throw error;
+            }
+
+            console.log(`offscreen not ready, retrying`, error.message);
+
+            await delay(100 * attempt);
+        }
+    }
 }
 
 // Fetching runs in the offscreen document because the service worker has no DOM
@@ -74,23 +89,56 @@ const sendUpdateTeamSavedRepliesCommand = async (sourceId, url) => {
 const refreshSource = async (source) => {
 
     if (isNullOrEmpty(source?.url)) {
+
+        await saveSyncStatus(source.id, { state: `error`, message: `No templates URL set.` });
+
         return;
     }
 
-    await setupOffscreenDocument();
+    await saveSyncStatus(source.id, { state: `syncing` });
 
-    await sendUpdateTeamSavedRepliesCommand(source.id, source.url);
+    try {
+        await setupOffscreenDocument();
+
+        const command =
+            createCommand(`UpdateTeamSavedReplies`, OFFSCREEN, { sourceId: source.id, url: source.url });
+
+        const response = await sendToOffscreenDocument(command);
+
+        if (response?.error) {
+
+            await saveSyncStatus(source.id, { state: `error`, message: response.error });
+
+            return;
+        }
+
+        const replies = response?.replies ?? [];
+
+        await saveRepliesInLocalStorage(source.id, replies);
+
+        await saveSyncStatus(source.id, {
+            state: replies.length === 0 ? `empty` : `ok`,
+            count: replies.length
+        });
+    }
+    catch (error) {
+
+        console.log(`failed to refresh ${source.id}`, error);
+
+        await saveSyncStatus(source.id, { state: `error`, message: error?.message ?? String(error) });
+    }
 }
 
-const refreshAllSources = async () => {
-
-    const sources = await getSources();
+// One source failing must not stop the rest from syncing.
+const refreshSources = async (sources) => {
 
     for (const source of sources) {
 
         await refreshSource(source);
     }
 }
+
+const refreshAllSources = async () => await refreshSources(await getSources());
 
 // One alarm for every source: the refresh rate is a global setting now.
 const scheduleRefresh = async () => {
@@ -119,7 +167,12 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 
         await removeDataForDeletedSources(oldValue, newValue);
 
-        await refreshAllSources();
+        // Sync straight away when a source is added or repointed, so configuring
+        // one shows its templates instead of waiting for the next alarm.
+        const needRefresh =
+            (newValue ?? []).filter((source) => sourceNeedsRefresh(oldValue, source));
+
+        await refreshSources(needRefresh);
     }
 
     if (changes[SETTINGS_KEY]) {
@@ -133,18 +186,11 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     }
 });
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-    handleOpenTeamSavedRepliesPanel(request, () =>{  
-        
+    handleOpenTeamSavedRepliesPanel(request, () => {
+
         chrome.sidePanel.open({ tabId: activeTabId });
-    });
-
-    await handleSaveTeamSavedRepliesCommand(request, async (sourceId, replies) => {
-
-        console.log(`saving replies for ${sourceId}.`);
-
-        await saveRepliesInLocalStorage(sourceId, replies);
     });
 });
 

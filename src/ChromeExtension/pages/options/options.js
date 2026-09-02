@@ -1,9 +1,73 @@
 // Everything is edited against a working copy and committed on Save.
 let workingSources = [];
+const statusElements = new Map();
 let workingSettings = { refreshRateInMinutes: DEFAULT_REFRESH_RATE_IN_MINUTES, showEdgeTab: true };
 
 const stripGitHubPrefix = (value) =>
     value.replace(/^https?:\/\/github\.com\//i, ``).replace(/\/$/, ``);
+
+const describeSyncStatus = (status) => {
+
+    if (status === undefined) {
+        return { text: `Not synced yet`, isError: false };
+    }
+
+    if (status.state === `syncing`) {
+        return { text: `Syncing…`, isError: false };
+    }
+
+    if (status.state === `error`) {
+        return { text: `Sync failed: ${status.message}`, isError: true };
+    }
+
+    if (status.state === `empty`) {
+        return {
+            text: `No templates found. The URL must be the GitHub page for the .md file.`,
+            isError: true
+        };
+    }
+
+    return {
+        text: `${status.count} ${status.count === 1 ? `template` : `templates`}`,
+        isError: false
+    };
+}
+
+const paintSyncStatus = (sourceId, status) => {
+
+    const element = statusElements.get(sourceId);
+
+    if (element === undefined) {
+        return;
+    }
+
+    const described = describeSyncStatus(status);
+
+    element.textContent = described.text;
+
+    element.className = `options-source-status${described.isError ? ` error` : ``}`;
+}
+
+const loadSyncStatuses = async () => {
+
+    for (const source of workingSources) {
+
+        paintSyncStatus(source.id, await getSyncStatusForSource(source.id));
+    }
+}
+
+// Statuses land while the page is open, so they are painted in place rather than
+// by re-rendering, which would throw away whatever is being typed.
+chrome.storage.onChanged.addListener((changes) => {
+
+    for (const [key, { newValue }] of Object.entries(changes)) {
+
+        if (key.startsWith(`syncStatus:`)) {
+
+            paintSyncStatus(key.slice(`syncStatus:`.length), newValue);
+        }
+    }
+});
 
 const createLabelledField = (labelText, control, helperText) => {
 
@@ -162,6 +226,10 @@ const createSourcePanel = (source, index) => {
 
     urlInput.addEventListener(`input`, (event) => { source.url = event.target.value; });
 
+    const status = createElement(`span`, { className: `options-source-status` });
+
+    statusElements.set(source.id, status);
+
     const remove = createElement(`button`, {
         children: [`Remove`],
         className: `options-source-remove`,
@@ -189,7 +257,10 @@ const createSourcePanel = (source, index) => {
                         ],
                         className: `options-source-heading`
                     }),
-                    remove
+                    createElement(`div`, {
+                        children: [status, remove],
+                        className: `options-source-heading`
+                    })
                 ],
                 className: `options-source-header`
             }),
@@ -305,6 +376,8 @@ let lastSyncedAt = null;
 
 const render = () => {
 
+    statusElements.clear();
+
     const root = document.getElementById(`options`);
 
     const addSource = createElement(`button`, {
@@ -366,6 +439,8 @@ const load = async () => {
     lastSyncedAt = await getLastSyncedAt();
 
     render();
+
+    await loadSyncStatuses();
 }
 
 load();

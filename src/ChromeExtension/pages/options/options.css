@@ -301,3 +301,18 @@ body {
     text-transform: uppercase;
     color: var(--neutral-700);
 }
+
+.options-source-status {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--neutral-700);
+}
+
+.options-source-status.error {
+    color: var(--accent-700);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+}

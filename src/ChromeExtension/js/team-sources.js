@@ -11,6 +11,8 @@ const repliesKeyFor = (sourceId) => `replies:${sourceId}`;
 
 const lastUpdatedKeyFor = (sourceId) => `lastUpdated:${sourceId}`;
 
+const syncStatusKeyFor = (sourceId) => `syncStatus:${sourceId}`;
+
 const templateIdFor = (sourceId, replyName) => `${sourceId}::${replyName}`;
 
 const getSources = async () => {
@@ -194,4 +196,13 @@ const getEdgeTabPosition = async () => {
 const saveEdgeTabPosition = async (topInPixels) => {
 
     await chrome.storage.local.set({ [EDGE_TAB_POSITION_KEY]: topInPixels });
+}
+
+const getSyncStatusForSource = async (sourceId) => {
+
+    const key = syncStatusKeyFor(sourceId);
+
+    const result = await chrome.storage.local.get([key]);
+
+    return result[key];
 }
