@@ -367,3 +367,28 @@ body {
         width: 100%;
     }
 }
+
+.options-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.options-button.primary:disabled:hover {
+    background: var(--accent);
+}
+
+.options-button.ghost:disabled:hover {
+    background: transparent;
+}
+
+.options-save-state {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--neutral-700);
+}
+
+.options-save-state.unsaved {
+    color: var(--accent-700);
+}

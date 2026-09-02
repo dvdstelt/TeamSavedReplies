@@ -3,6 +3,36 @@ import { fetchSavedRepliesFromUrl } from "../../js/modules/fetch-saved-replies.j
 // Everything is edited against a working copy and committed on Save.
 let workingSources = [];
 const statusElements = new Map();
+
+// Edits live in the working copy until Save, so the page has to say when there
+// is something pending - otherwise Save and Cancel look inert either way.
+let savedSnapshot = ``;
+
+const snapshotOfWorkingCopy = () =>
+    JSON.stringify({ sources: workingSources, settings: workingSettings });
+
+const hasUnsavedChanges = () => snapshotOfWorkingCopy() !== savedSnapshot;
+
+const updateSaveState = (message) => {
+
+    const save = document.querySelector(`.options-button.primary`);
+
+    if (save === null) {
+        return;
+    }
+
+    const dirty = hasUnsavedChanges();
+
+    save.disabled = !dirty;
+
+    document.querySelector(`.options-button.ghost`).disabled = !dirty;
+
+    const state = document.querySelector(`.options-save-state`);
+
+    state.textContent = message ?? (dirty ? `Unsaved changes` : ``);
+
+    state.className = `options-save-state${dirty ? ` unsaved` : ``}`;
+}
 let workingSettings = { refreshRateInMinutes: DEFAULT_REFRESH_RATE_IN_MINUTES, showEdgeTab: true };
 
 const stripGitHubPrefix = (value) =>
@@ -158,6 +188,8 @@ const createOwnerField = (source) => {
         source.owner = stripped;
 
         updateOwnerWarning(input, source);
+
+        updateSaveState();
     });
 
     return createElement(`div`, {
@@ -256,6 +288,8 @@ const createSourcePanel = (source, index) => {
         source.name = event.target.value;
 
         heading.textContent = source.name || `Untitled source`;
+
+        updateSaveState();
     });
 
     const urlInput = createElement(`input`, {
@@ -266,7 +300,12 @@ const createSourcePanel = (source, index) => {
         "aria-label": `Templates URL`
     });
 
-    urlInput.addEventListener(`input`, (event) => { source.url = event.target.value; });
+    urlInput.addEventListener(`input`, (event) => {
+
+        source.url = event.target.value;
+
+        updateSaveState();
+    });
 
     const status = createElement(`span`, { className: `options-source-status` });
 
@@ -373,6 +412,8 @@ const createGlobalStrip = () => {
     refreshInput.addEventListener(`input`, (event) => {
 
         workingSettings.refreshRateInMinutes = event.target.value;
+
+        updateSaveState();
     });
 
     return createElement(`div`, {
@@ -409,6 +450,10 @@ const createActionBar = (lastSyncedAt) => {
         await saveGlobalSettings(workingSettings);
 
         await load();
+
+        updateSaveState(`Saved`);
+
+        setTimeout(() => updateSaveState(), 2000);
     });
 
     const cancel = createElement(`button`, {
@@ -423,6 +468,7 @@ const createActionBar = (lastSyncedAt) => {
         children: [
             save,
             cancel,
+            createElement(`div`, { className: `options-save-state` }),
             createElement(`div`, {
                 children: [`Last ${describeMinutesSince(lastSyncedAt)}`],
                 className: `options-last-sync`
@@ -488,6 +534,8 @@ const render = () => {
         ...workingSources.map(createSourcePanel),
         createElement(`div`, { children: [addSource], className: `options-add-source-row` }),
         createActionBar(lastSyncedAt));
+
+    updateSaveState();
 }
 
 const load = async () => {
@@ -498,9 +546,22 @@ const load = async () => {
 
     lastSyncedAt = await getLastSyncedAt();
 
+    savedSnapshot = snapshotOfWorkingCopy();
+
     render();
 
     await loadSyncStatuses();
 }
 
 load();
+
+// Closing the tab is the one way to lose pending edits without meaning to.
+window.addEventListener(`beforeunload`, (event) => {
+
+    if (hasUnsavedChanges()) {
+
+        event.preventDefault();
+
+        event.returnValue = ``;
+    }
+});
