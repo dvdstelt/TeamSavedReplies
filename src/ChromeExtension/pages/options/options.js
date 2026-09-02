@@ -242,7 +242,7 @@ const createSourcePanel = (source, index) => {
         className: `options-text-input`,
         type: `text`,
         value: source.name,
-        placeholder: `Particular`,
+        placeholder: `dvdstelt`,
         "aria-label": `Name`
     });
 
@@ -262,7 +262,7 @@ const createSourcePanel = (source, index) => {
         className: `options-text-input options-mono-input`,
         type: `text`,
         value: source.url,
-        placeholder: `https://github.com/Particular/docs/blob/main/saved-replies.md`,
+        placeholder: `https://github.com/dvdstelt/SharedSavedReplies/blob/main/sample-replies.md`,
         "aria-label": `Templates URL`
     });
 
