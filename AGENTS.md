@@ -54,7 +54,7 @@ Both extensions share the same conceptual architecture but are **not code-shared
 | `pages/popup/` | Extension popup UI for managing saved reply configurations |
 | `pages/sidepanel/` (Chrome) / `pages/sidepanel/` (Firefox) | Side panel UI showing saved replies |
 | `pages/options/` | Extension options page |
-| `pages/shared-saved-replies-form/` | Form for adding/editing saved reply sources |
+| `pages/team-saved-replies-form/` | Form for adding/editing saved reply sources |
 | `js/modules/` | Shared utility modules (messaging, DOM creation, theming, etc.) |
 | `css/` | Stylesheets including Prism.js syntax highlighting and theme support |
 

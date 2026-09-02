@@ -74,7 +74,7 @@ const filterItems = (searchValue) => {
 const openEditItemPage = (name) => {
 
     chrome.tabs.create({
-        url: `pages/shared-saved-replies-form/shared-saved-replies-form.html?name=${name}`
+        url: `pages/team-saved-replies-form/team-saved-replies-form.html?name=${name}`
     });
 }
 
@@ -82,7 +82,7 @@ const openAddItemPage = async () => {
 
     //open a tab to create a new shared saved reply
     chrome.tabs.create({
-        url: `pages/shared-saved-replies-form/shared-saved-replies-form.html`
+        url: `pages/team-saved-replies-form/team-saved-replies-form.html`
     })
 }
 
