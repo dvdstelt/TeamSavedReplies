@@ -265,3 +265,12 @@ const describeMinutesSince = (ticks) => {
 
     return `synced ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
 }
+
+const ROW_LABEL_DURATION_IN_MS = 1500;
+
+const flashRowLabel = (label, text) => {
+
+    label.textContent = text;
+
+    setTimeout(() => { label.textContent = ``; }, ROW_LABEL_DURATION_IN_MS);
+}

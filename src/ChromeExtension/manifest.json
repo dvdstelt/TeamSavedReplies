@@ -12,6 +12,14 @@
   "side_panel":{
     "default_path": "pages/sidepanel/saved-replies-sidepanel.html"
   },
+  "commands": {
+    "toggle-side-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Period"
+      },
+      "description": "Toggle the saved replies panel"
+    }
+  },
   "content_scripts": [
     {
       "matches": [

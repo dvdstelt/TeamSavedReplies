@@ -36,7 +36,7 @@ const insertReplyIntoTextarea = (body) => {
     const textarea = document.querySelector(
         '#new_comment_field, textarea[name="comment[body]"], div[data-testid="markdown-editor-comment-composer"] textarea, textarea[class*="prc-Textarea-TextArea"]'
     );
-    if (!textarea) return;
+    if (!textarea) return false;
 
     textarea.focus();
 
@@ -54,6 +54,8 @@ const insertReplyIntoTextarea = (body) => {
 
     const newCursorPos = start + body.length;
     textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+    return true;
 };
 
 const closeSavedRepliesDialog = () => {

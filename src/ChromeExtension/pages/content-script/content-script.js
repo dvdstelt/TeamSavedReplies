@@ -9,7 +9,7 @@ const showHideSavedRepliesButton = async (showButton) => {
     if (!await isSidebarButtonEnabled()) return;
 
     var showSavedRepliesButton =
-        document.querySelector(".team-saved-replies-button-container");
+        document.querySelector(".team-saved-replies-edge-tab");
 
     if (showSavedRepliesButton === undefined || showSavedRepliesButton == null) {
 
@@ -43,7 +43,7 @@ const main = async () => {
     if (!await isSidebarButtonEnabled()) return;
 
     const showSavedRepliesButton =
-        document.querySelector(".team-saved-replies-button-container");
+        document.querySelector(".team-saved-replies-edge-tab");
 
     if (showSavedRepliesButton === undefined || showSavedRepliesButton == null) {
 
@@ -59,6 +59,18 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     handleCanLoadSavedRepliesChanged(request, (canLoadSavedReplies) => {
         showHideSavedRepliesButton(canLoadSavedReplies);
     });
+});
+
+// The side panel asks the page to take a template. Insertion is synchronous DOM
+// work, so this responds immediately rather than returning a promise, which
+// chrome.runtime.onMessage does not await.
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+    if (!canHandleCommand(request, CONTENT_SCRIPT, "InsertTemplateIntoComment")) {
+        return;
+    }
+
+    sendResponse({ inserted: insertReplyIntoTextarea(request.data.body) === true });
 });
 
 document.addEventListener("soft-nav:end", main);

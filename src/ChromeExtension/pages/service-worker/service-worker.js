@@ -149,6 +149,14 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     });
 });
 
+chrome.commands.onCommand.addListener((command) => {
+
+    if (command === `toggle-side-panel`) {
+
+        chrome.sidePanel.open({ tabId: activeTabId });
+    }
+});
+
 onAlarm(async () => await refreshAllSources());
 
 chrome.webNavigation.onHistoryStateUpdated.addListener( 

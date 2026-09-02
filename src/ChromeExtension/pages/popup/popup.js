@@ -1,5 +1,3 @@
-const COPIED_LABEL_DURATION_IN_MS = 1500;
-
 let groups = [];
 let collapsedGroups = {};
 let query = ``;
@@ -16,20 +14,13 @@ const describeHeaderSubline = () => {
     return `${groups.length} repos · ${templateCount} templates`;
 }
 
-const showCopied = (label, text) => {
-
-    label.textContent = text;
-
-    setTimeout(() => { label.textContent = ``; }, COPIED_LABEL_DURATION_IN_MS);
-}
-
 const copyTemplate = async (template, label) => {
 
     try {
 
         await navigator.clipboard.writeText(template.body);
 
-        showCopied(label, `Copied`);
+        flashRowLabel(label, `Copied`);
 
         await pushRecentlyUsed(template.id);
     }

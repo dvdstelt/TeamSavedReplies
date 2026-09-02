@@ -1,22 +1,76 @@
-.team-saved-replies-button-container{
-    display:block;
-    position:fixed;
-    z-index:9999;
-    bottom:50vh; 
-    right:0;
+.team-saved-replies-edge-tab {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    position: fixed;
+    right: 0;
+    z-index: 9999;
+    box-sizing: border-box;
+    width: 26px;
+    height: 76px;
+    padding: 0 0 0 5px;
+    background: #201e1d;
+    border: none;
+    border-left: 2px solid #ec3013;
+    border-radius: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: width 160ms ease, padding 160ms ease;
 }
 
-.team-saved-replies-button-container.hide{
-    display:none;
+.team-saved-replies-edge-tab.hide {
+    display: none;
 }
 
-.team-saved-replies-icon-button {    
-    background-color: lightgray;
-    border-radius: 25% 0% 0% 25%;
-    height:36px;
-    width:36px;
+.team-saved-replies-edge-tab:hover,
+.team-saved-replies-edge-tab:focus-visible {
+    width: 200px;
+    padding: 0 12px 0 10px;
 }
 
-.team-saved-replies-icon-button:active{
-    cursor: move;
+.team-saved-replies-edge-tab.dragging {
+    transition: none;
+}
+
+.team-saved-replies-edge-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    filter: invert(1);
+    pointer-events: none;
+}
+
+.team-saved-replies-edge-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    pointer-events: none;
+}
+
+.team-saved-replies-edge-tab:hover .team-saved-replies-edge-labels,
+.team-saved-replies-edge-tab:focus-visible .team-saved-replies-edge-labels {
+    opacity: 1;
+}
+
+.team-saved-replies-edge-label {
+    font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.team-saved-replies-edge-subline {
+    font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #bab6b6;
+    white-space: nowrap;
 }
