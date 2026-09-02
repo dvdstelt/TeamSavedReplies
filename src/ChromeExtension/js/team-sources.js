@@ -248,3 +248,16 @@ const explainSourceMismatch = (source, url) => {
 
     return undefined;
 }
+
+const saveTemplatesForSource = async (sourceId, replies) => {
+
+    await chrome.storage.local.set({
+        [repliesKeyFor(sourceId)]: replies,
+        [lastUpdatedKeyFor(sourceId)]: utcNowTicks()
+    });
+}
+
+const saveSyncStatusForSource = async (sourceId, status) => {
+
+    await chrome.storage.local.set({ [syncStatusKeyFor(sourceId)]: status });
+}

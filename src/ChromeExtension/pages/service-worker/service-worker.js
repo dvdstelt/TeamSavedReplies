@@ -194,21 +194,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
 });
 
-// Syncing one source on demand. The source is carried in the message rather than
-// looked up by id, so the options page can test a source it has not saved yet.
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-
-    if (!canHandleCommand(request, SERVICE_WORKER, `RefreshSource`)) {
-        return;
-    }
-
-    refreshSource(request.data.source)
-        .then(() => sendResponse({ done: true }))
-        .catch((error) => sendResponse({ error: error?.message ?? String(error) }));
-
-    return true;
-});
-
 chrome.commands.onCommand.addListener((command) => {
 
     if (command === `toggle-side-panel`) {

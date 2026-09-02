@@ -5,20 +5,13 @@ const getSourceById = async (sourceId) => {
     return sources.find((source) => source.id === sourceId);
 }
 
-const saveRepliesInLocalStorage = async (sourceId, teamSavedReplies) => {
-
-    await chrome.storage.local.set({
-        [repliesKeyFor(sourceId)]: teamSavedReplies,
-        [lastUpdatedKeyFor(sourceId)]: utcNowTicks()
-    });
-}
+const saveRepliesInLocalStorage = async (sourceId, teamSavedReplies) =>
+    await saveTemplatesForSource(sourceId, teamSavedReplies);
 
 // The options page reads this back so a source that fetched nothing, or failed,
 // says so instead of just showing an empty list.
-const saveSyncStatus = async (sourceId, status) => {
-
-    await chrome.storage.local.set({ [syncStatusKeyFor(sourceId)]: status });
-}
+const saveSyncStatus = async (sourceId, status) =>
+    await saveSyncStatusForSource(sourceId, status);
 
 const removeDataFromLocalStorage = async (sourceId) => {
 

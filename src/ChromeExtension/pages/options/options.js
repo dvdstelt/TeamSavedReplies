@@ -1,3 +1,5 @@
+import { fetchSavedRepliesFromUrl } from "../../js/modules/fetch-saved-replies.js";
+
 // Everything is edited against a working copy and committed on Save.
 let workingSources = [];
 const statusElements = new Map();
@@ -71,6 +73,43 @@ chrome.storage.onChanged.addListener((changes) => {
         }
     }
 });
+
+// The offscreen document exists only because the service worker has no DOM to
+// parse GitHub's rendered page with. This page has one, so it fetches directly
+// rather than asking the worker to do it and waiting on a reply.
+const syncSourceNow = async (source) => {
+
+    const setStatus = async (status) => {
+
+        paintSyncStatus(source.id, status);
+
+        await saveSyncStatusForSource(source.id, status);
+    };
+
+    if (isNullOrEmpty(source.url)) {
+
+        await setStatus({ state: `error`, message: `No templates URL set.` });
+
+        return;
+    }
+
+    await setStatus({ state: `syncing` });
+
+    try {
+        const replies = await fetchSavedRepliesFromUrl(source.url);
+
+        await saveTemplatesForSource(source.id, replies);
+
+        await setStatus({
+            state: replies.length === 0 ? `empty` : `ok`,
+            count: replies.length
+        });
+    }
+    catch (error) {
+
+        await setStatus({ state: `error`, message: error?.message ?? String(error) });
+    }
+}
 
 const createLabelledField = (labelText, control, helperText) => {
 
@@ -241,29 +280,14 @@ const createSourcePanel = (source, index) => {
     });
 
     // Syncs whatever is in the fields right now, so a URL can be checked before
-    // it is saved. The status beside the name reports what came back.
+    // it is saved.
     sync.addEventListener(`click`, async () => {
 
         sync.disabled = true;
 
-        try {
-            const command = createCommand(`RefreshSource`, SERVICE_WORKER, { source: { ...source } });
+        await syncSourceNow(source);
 
-            const response = await chrome.runtime.sendMessage(command);
-
-            if (response?.error) {
-
-                paintSyncStatus(source.id, { state: `error`, message: response.error });
-            }
-        }
-        catch (error) {
-
-            paintSyncStatus(source.id, { state: `error`, message: error?.message ?? String(error) });
-        }
-        finally {
-
-            sync.disabled = false;
-        }
+        sync.disabled = false;
     });
 
     const remove = createElement(`button`, {
