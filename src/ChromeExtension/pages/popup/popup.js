@@ -1,4 +1,5 @@
 let groups = [];
+let activeTabUrl;
 let collapsedGroups = {};
 let query = ``;
 
@@ -89,20 +90,54 @@ const renderList = () => {
     }
 }
 
-const renderEmptyPopup = (title, hint) =>
+const createEmptyPopup = (title, lines) =>
     createElement(`div`, {
         children: [
             createElement(`div`, { children: [title], className: `tsr-empty-title` }),
-            createElement(`div`, { children: [hint], className: `tsr-empty-hint` })
+            ...lines.map((line) =>
+                createElement(`div`, { children: [line], className: `tsr-empty-hint` }))
         ],
         className: `tsr-empty`
     });
 
+// An empty popup is nearly always a scoping question, so it says which page it
+// looked at and what each configured source wanted instead.
+const explainEmptyPopup = (sources) => {
+
+    if (sources.length === 0) {
+
+        return createEmptyPopup(`No sources configured`, [
+            `Open settings with the gear above to add a templates file.`
+        ]);
+    }
+
+    if (activeTabUrl === undefined) {
+
+        return createEmptyPopup(`Could not read the current tab`, [
+            `Templates are matched against the page you are on, and that page could not be determined.`
+        ]);
+    }
+
+    const reasons = sources
+        .map((source) => explainSourceMismatch(source, activeTabUrl))
+        .filter((reason) => reason !== undefined);
+
+    return createEmptyPopup(`No templates for this page`, [activeTabUrl, ...new Set(reasons)]);
+}
+
+// A source can apply here and still have nothing cached, which otherwise looks
+// exactly like a scoping miss.
+const explainEmptyGroups = () =>
+    createEmptyPopup(`No templates cached yet`, [
+        `${groups.map((group) => group.source.name || `Untitled source`).join(`, `)} applies to this page but has nothing stored.`,
+        `Open settings and press Sync on the source.`
+    ]);
+
 const initialize = async () => {
 
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    activeTabUrl = await getActiveTabUrl();
 
-    groups = await getTemplateGroupsForUrl(tab?.url ?? ``);
+    groups = await getTemplateGroupsForUrl(activeTabUrl ?? ``);
 
     collapsedGroups = await getCollapsedGroups();
 
@@ -125,17 +160,18 @@ const initialize = async () => {
             className: `tsr-footer`
         }));
 
+    const list = document.querySelector(`.tsr-list`);
+
     if (groups.length === 0) {
 
-        const list = document.querySelector(`.tsr-list`);
+        list.append(explainEmptyPopup(sources));
 
-        list.append(sources.length === 0
-            ? renderEmptyPopup(
-                `No sources configured`,
-                `Open settings with the gear above to add a templates file.`)
-            : renderEmptyPopup(
-                `Nothing applies to this page`,
-                `Sources are scoped to an organization and to issues or pull requests.`));
+        return;
+    }
+
+    if (groups.every((group) => group.templates.length === 0)) {
+
+        list.append(explainEmptyGroups());
 
         return;
     }

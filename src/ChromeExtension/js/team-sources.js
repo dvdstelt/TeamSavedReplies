@@ -206,3 +206,45 @@ const getSyncStatusForSource = async (sourceId) => {
 
     return result[key];
 }
+
+// Why a configured source contributes nothing to the page being looked at. The
+// popup shows these so an empty list is explained rather than just empty.
+const explainSourceMismatch = (source, url) => {
+
+    const name = source.name || `Untitled source`;
+
+    if (isNullOrEmpty(source.url)) {
+        return `${name} has no templates URL set.`;
+    }
+
+    const isIssue = isGitHubIssueUrl(url);
+
+    const isPullRequest = isGitHubPullRequestUrl(url);
+
+    if (!isIssue && !isPullRequest) {
+        return `This page is not a GitHub issue or pull request.`;
+    }
+
+    if (source.scope === `orgs`) {
+
+        const owner = getGitHubOwner(url);
+
+        if (!source.owner) {
+            return `${name} is scoped to an organization, but none is set.`;
+        }
+
+        if (!owner || owner.localeCompare(source.owner, undefined, { sensitivity: `base` }) !== 0) {
+            return `${name} only applies to ${source.owner}, this page is ${owner ?? `elsewhere`}.`;
+        }
+    }
+
+    if (isIssue && !source.issues) {
+        return `${name} is switched off for issues.`;
+    }
+
+    if (isPullRequest && !source.prs) {
+        return `${name} is switched off for pull requests.`;
+    }
+
+    return undefined;
+}

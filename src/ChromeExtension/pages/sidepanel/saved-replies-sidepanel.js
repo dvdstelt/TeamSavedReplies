@@ -1,4 +1,5 @@
 let groups = [];
+let activeTabUrl;
 let recentlyUsedIds = [];
 let query = ``;
 
@@ -162,9 +163,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 const initialize = async () => {
 
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    activeTabUrl = await getActiveTabUrl();
 
-    groups = await getTemplateGroupsForUrl(tab?.url ?? ``);
+    groups = await getTemplateGroupsForUrl(activeTabUrl ?? ``);
 
     recentlyUsedIds = await getRecentlyUsed();
 
