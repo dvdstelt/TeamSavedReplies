@@ -50,7 +50,9 @@ const applyTemplate = async (template, label) => {
 
     recentlyUsedIds = await pushRecentlyUsed(template.id);
 
-    renderList();
+    // Re-rendering now would replace the row that is still showing its label, so
+    // the Recently used section is refreshed once the label has run its course.
+    setTimeout(renderList, ROW_LABEL_DURATION_IN_MS);
 }
 
 const createSectionHeader = (name, note) =>
