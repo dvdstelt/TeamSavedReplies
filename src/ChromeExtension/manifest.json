@@ -26,7 +26,8 @@
         "https://github.com/*"
       ],
       "css":[
-            "pages/sidepanel/sidepanel-button.css"
+            "pages/sidepanel/sidepanel-button.css",
+            "pages/content-script/inline-template-menu.css"
       ],
       "js": [
         "js/time.js",
@@ -45,6 +46,7 @@
         "pages/content-script/content-script-urls.js",
         "pages/content-script/content-script-messaging.js",
         "pages/sidepanel/saved-replies-sidepanel-toggle-button.js",
+        "pages/content-script/inline-template-menu.js",
         "pages/content-script/content-script.js"
       ]
     }

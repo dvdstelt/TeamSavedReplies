@@ -392,3 +392,7 @@ body {
 .options-save-state.unsaved {
     color: var(--accent-700);
 }
+
+.options-trigger-input {
+    width: 110px;
+}
