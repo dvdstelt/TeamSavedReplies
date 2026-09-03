@@ -83,7 +83,17 @@ Content scripts are declared for `https://github.com/*` and the matching host pe
 - Does not collect or transmit any user data.
 - No personally identifiable information, health, financial, authentication, personal communications, location, web history or user activity is collected.
 - No data is sold or transferred to third parties.
-- A privacy policy URL is not required while nothing is collected.
+- Privacy policy: docs/privacy-policy.md in this repository, linked from the listing.
+
+## Privacy policy URL
+
+Strictly, Google requires a policy only where an extension handles personal or sensitive user data, and this one certifies that it collects none. In practice a reviewer looking at `tabs` plus a host permission may ask anyway, and a rejection costs days while providing a link costs nothing. So there is one.
+
+Once the repository is pushed it is served at:
+
+    https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/privacy-policy.md
+
+GitHub Pages would give a tidier URL if that matters, but a rendered file in a public repository is an accepted location.
 
 ## Assets still needed
 
