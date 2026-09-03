@@ -74,3 +74,5 @@ main().catch((error) => {
 });
 
 observeSavedRepliesDialog();
+
+startInlineTemplateMenu();
