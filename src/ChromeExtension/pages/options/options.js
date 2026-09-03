@@ -398,6 +398,28 @@ const createSourcePanel = (source, index) => {
     });
 }
 
+const updateTriggerWarning = (input) => {
+
+    const field = input.parentElement;
+
+    const existing = field.querySelector(`.options-warning`);
+
+    if (workingSettings.inlineTrigger) {
+
+        existing?.remove();
+
+        return;
+    }
+
+    if (existing === null) {
+
+        field.append(createElement(`div`, {
+            children: [`Without a trigger the inline menu cannot open.`],
+            className: `options-warning`
+        }));
+    }
+}
+
 const createGlobalStrip = () => {
 
     const refreshInput = createElement(`input`, {
@@ -416,6 +438,31 @@ const createGlobalStrip = () => {
         updateSaveState();
     });
 
+    const triggerInput = createElement(`input`, {
+        className: `options-text-input options-mono-input options-trigger-input`,
+        type: `text`,
+        value: workingSettings.inlineTrigger,
+        maxlength: `4`,
+        "aria-label": `Inline menu trigger`
+    });
+
+    // Whitespace would never survive the start-of-word rule, and an empty
+    // trigger would match everywhere.
+    triggerInput.addEventListener(`input`, (event) => {
+
+        const cleaned = event.target.value.replace(/\s+/g, ``);
+
+        if (cleaned !== event.target.value) {
+            event.target.value = cleaned;
+        }
+
+        workingSettings.inlineTrigger = cleaned;
+
+        updateTriggerWarning(triggerInput);
+
+        updateSaveState();
+    });
+
     return createElement(`div`, {
         children: [
             createElement(`div`, { children: [`Global`], className: `options-section-label` }),
@@ -426,7 +473,13 @@ const createGlobalStrip = () => {
                     createLabelledField(`Show edge tab on GitHub`,
                         createOnOffControl(workingSettings.showEdgeTab,
                             (value) => { workingSettings.showEdgeTab = value; render(); }),
-                        `Off still leaves the replies in GitHub's own saved-replies dialog and in the extension popup.`)
+                        `Off still leaves the replies in GitHub's own saved-replies dialog and in the extension popup.`),
+                    createLabelledField(`Inline template menu`,
+                        createOnOffControl(workingSettings.inlineMenuEnabled,
+                            (value) => { workingSettings.inlineMenuEnabled = value; render(); }),
+                        `Typing the trigger in a GitHub comment opens a filtered list of templates at the cursor.`),
+                    createLabelledField(`Trigger`, triggerInput,
+                        `Recognised at the start of a word. Two characters are safer than one: a lone ! collides with markdown images.`)
                 ],
                 className: `options-global-grid`
             })
