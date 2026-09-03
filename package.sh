@@ -2,12 +2,16 @@
 #
 # Packages a browser extension for upload.
 #
-# The archive is built from a staging copy, so the working tree is never
-# modified - including when --version stamps a version into the manifest.
+# Packaging alone never changes anything tracked. Asking for a version does:
+# a bump has to be written to the manifest, or the next one would be worked out
+# from the same old number again. The change is left unstaged for review.
 #
 # Usage:
-#   ./package.sh                       package chrome at the manifest's version
-#   ./package.sh --version 1.2.3       stamp 1.2.3 into the packaged manifest
+#   ./package.sh                       package at the manifest's current version
+#   ./package.sh patch                 0.1.0 -> 0.1.1, then package
+#   ./package.sh minor                 0.1.0 -> 0.2.0, then package
+#   ./package.sh major                 0.1.0 -> 1.0.0, then package
+#   ./package.sh --version 1.2.3       set an exact version, then package
 #   ./package.sh --output build        write the archive somewhere else
 #   ./package.sh --no-verify           skip the pre-package checks
 #
@@ -18,6 +22,7 @@ readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="chrome"
 OUTPUT_DIR="$REPO_ROOT/dist"
 VERSION=""
+BUMP=""
 VERIFY=1
 
 die() { printf 'package.sh: %s\n' "$1" >&2; exit 1; }
@@ -34,6 +39,9 @@ while [ $# -gt 0 ]; do
         -v|--version) VERSION="${2:-}";    shift 2 || die "--version needs a value" ;;
         -o|--output)  OUTPUT_DIR="${2:-}"; shift 2 || die "--output needs a value" ;;
         --no-verify)  VERIFY=0;            shift ;;
+        major|minor|patch)
+                      [ -z "$BUMP" ] || die "give one of major, minor or patch, not several"
+                      BUMP="$1";           shift ;;
         -h|--help)    usage 0 ;;
         *)            printf 'package.sh: unknown option %s\n\n' "$1" >&2; usage 1 ;;
     esac
@@ -53,9 +61,44 @@ readonly SOURCE_DIR
 
 [ -f "$SOURCE_DIR/manifest.json" ] || die "no manifest.json in $SOURCE_DIR"
 
+if [ -n "$VERSION" ] && [ -n "$BUMP" ]; then
+    die "--version sets an exact version; use it or a bump, not both"
+fi
+
 if [ -n "$VERSION" ]; then
     printf '%s' "$VERSION" | grep -Eq '^[0-9]+(\.[0-9]+){0,3}$' \
         || die "version '$VERSION' is not a dotted number, which is all a manifest accepts"
+fi
+
+PREVIOUS_VERSION="$(python3 -c "
+import io, json, sys
+print(json.load(io.open(sys.argv[1], encoding='utf-8')).get('version', '0.0.0'))
+" "$SOURCE_DIR/manifest.json")"
+
+if [ -n "$BUMP" ]; then
+    VERSION="$(python3 -c "
+import sys
+parts = [int(p) for p in sys.argv[1].split('.')][:3]
+parts += [0] * (3 - len(parts))
+major, minor, patch = parts
+if sys.argv[2] == 'major':   major, minor, patch = major + 1, 0, 0
+elif sys.argv[2] == 'minor': minor, patch = minor + 1, 0
+else:                        patch += 1
+print(f'{major}.{minor}.{patch}')
+" "$PREVIOUS_VERSION" "$BUMP")"
+fi
+
+# Written to the manifest rather than only to the archive, so the number moves
+# forward for real. Left unstaged deliberately - committing it is a decision.
+if [ -n "$VERSION" ] && [ "$VERSION" != "$PREVIOUS_VERSION" ]; then
+    python3 - "$SOURCE_DIR/manifest.json" "$VERSION" <<'PY'
+import io, json, sys
+path, version = sys.argv[1], sys.argv[2]
+manifest = json.load(io.open(path, encoding='utf-8'))
+manifest['version'] = version
+io.open(path, 'w', encoding='utf-8', newline='\n').write(json.dumps(manifest, indent=2) + '\n')
+PY
+    printf 'version  : %s -> %s (manifest.json updated, not staged)\n' "$PREVIOUS_VERSION" "$VERSION"
 fi
 
 STAGING="$(mktemp -d)"
@@ -67,16 +110,6 @@ cp -r "$SOURCE_DIR/." "$STAGING/"
 find "$STAGING" \( -name '.DS_Store' -o -name 'Thumbs.db' -o -name '*.map' \
                 -o -name 'stub-chrome.js' -o -name '__MACOSX' -o -name 'node_modules' \) \
      -exec rm -rf {} + 2>/dev/null || true
-
-if [ -n "$VERSION" ]; then
-    python3 - "$STAGING/manifest.json" "$VERSION" <<'PY'
-import io, json, sys
-path, version = sys.argv[1], sys.argv[2]
-manifest = json.load(io.open(path, encoding='utf-8'))
-manifest['version'] = version
-io.open(path, 'w', encoding='utf-8', newline='\n').write(json.dumps(manifest, indent=2) + '\n')
-PY
-fi
 
 read -r NAME PACKAGE_VERSION SLUG <<EOF
 $(python3 - "$STAGING/manifest.json" <<'PY'
