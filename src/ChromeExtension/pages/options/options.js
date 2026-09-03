@@ -420,6 +420,14 @@ const updateTriggerWarning = (input) => {
     }
 }
 
+// The Firefox build ships no edge tab, so the switch for it would control
+// nothing there. Read from the manifest rather than sniffing the browser, so the
+// option comes back by itself if the tab is ever added.
+const buildHasEdgeTab = () =>
+    (chrome.runtime.getManifest().content_scripts ?? [])
+        .some((script) => (script.js ?? [])
+            .some((file) => file.includes(`saved-replies-sidepanel-toggle-button`)));
+
 const createGlobalStrip = () => {
 
     const refreshInput = createElement(`input`, {
@@ -470,10 +478,10 @@ const createGlobalStrip = () => {
                 children: [
                     createLabelledField(`Refresh rate in minutes`, refreshInput,
                         `How often every source is re-fetched and cached. A refresh takes a few hundred milliseconds.`),
-                    createLabelledField(`Show edge tab on GitHub`,
+                    ...(buildHasEdgeTab() ? [createLabelledField(`Show edge tab on GitHub`,
                         createOnOffControl(workingSettings.showEdgeTab,
                             (value) => { workingSettings.showEdgeTab = value; render(); }),
-                        `Off still leaves the replies in GitHub's own saved-replies dialog and in the extension popup.`),
+                        `Off still leaves the replies in GitHub's own saved-replies dialog and in the extension popup.`)] : []),
                     createLabelledField(`Inline template menu`,
                         createOnOffControl(workingSettings.inlineMenuEnabled,
                             (value) => { workingSettings.inlineMenuEnabled = value; render(); }),
