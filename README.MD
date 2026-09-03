@@ -68,15 +68,7 @@ Commit it and note the URL of the file's page on GitHub. Private repositories wo
 
 ## Installing
 
-Not published to the Chrome Web Store or Firefox Add-ons yet, so load it from source.
-
-**Chrome or Edge**: clone this repository, open `chrome://extensions`, turn on "Developer mode", click "Load unpacked" and select `src/ChromeExtension`.
-
-**Firefox**: clone this repository, open `about:debugging#/runtime/this-firefox`, click "Load Temporary Add-on" and select `src/FirefoxExtension/manifest.json`.
-
-It uses its own name and add-on ID, so it installs alongside the original extension without conflicting with it.
-
-> **One difference on Firefox.** Everything is there except the edge tab on the side of the GitHub page, which Firefox cannot support: sidebars only open from a keyboard shortcut, a toolbar button or a menu entry, never from a click inside the page. Use `Ctrl+Shift+Y` or right-click a comment box instead.
+Currently submitted for review in Chrome extensions store.
 
 ## Configuring it
 
@@ -97,21 +89,10 @@ Add as many sources as you like. A source scoped to your own organisation and on
 
 **Sync** on a source fetches it immediately and reports what came back, so you can check a URL works before committing to it. Changes are only stored when you press **Save**.
 
-## Building a package
-
-```
-./package.sh          # package at the current version
-./package.sh patch    # bump the patch version first
-./package.sh minor
-./package.sh major
-```
-
-The archive lands in `dist/`. Packaging refuses to write an archive that references files it does not contain, or that carries a script which does not parse.
-
 ## Security and privacy
 
 Nothing is collected and nothing is sent anywhere. See [the privacy policy](docs/privacy-policy.md) for exactly what is stored and the single network request the extension makes, and [the security policy](SECURITY.md) for how to report a vulnerability.
 
 ## Credits
 
-Team Saved Replies is a fork of [awright18/SharedSavedReplies](https://github.com/awright18/SharedSavedReplies) by Andrew Wright. It carries the changes from [awright18/SharedSavedReplies#34](https://github.com/awright18/SharedSavedReplies/pull/34), which added injection into GitHub's native saved replies dialog on both issue and pull request pages.
+Team Saved Replies is a fork of [awright18/SharedSavedReplies](https://github.com/awright18/SharedSavedReplies) by Adam Wright. It carries the changes from [awright18/SharedSavedReplies#34](https://github.com/awright18/SharedSavedReplies/pull/34), which added injection into GitHub's native saved replies dialog on both issue and pull request pages.
