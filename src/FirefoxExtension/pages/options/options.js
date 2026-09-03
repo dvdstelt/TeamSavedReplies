@@ -1,111 +1,620 @@
-import { themes, getCurrentTheme, applyTheme, applyCurrentTheme } from "../../js/modules/theme.js";
-import { getSettings, saveSettings } from "../../js/modules/settings.js";
+import { fetchSavedRepliesFromUrl } from "../../js/modules/fetch-saved-replies.js";
 
-const getFormValues = () => {
+// Everything is edited against a working copy and committed on Save.
+let workingSources = [];
+const statusElements = new Map();
+
+// Edits live in the working copy until Save, so the page has to say when there
+// is something pending - otherwise Save and Cancel look inert either way.
+let savedSnapshot = ``;
+
+const snapshotOfWorkingCopy = () =>
+    JSON.stringify({ sources: workingSources, settings: workingSettings });
+
+const hasUnsavedChanges = () => snapshotOfWorkingCopy() !== savedSnapshot;
+
+const updateSaveState = (message) => {
+
+    const save = document.querySelector(`.options-button.primary`);
+
+    if (save === null) {
+        return;
+    }
+
+    const dirty = hasUnsavedChanges();
+
+    save.disabled = !dirty;
+
+    document.querySelector(`.options-button.ghost`).disabled = !dirty;
+
+    const state = document.querySelector(`.options-save-state`);
+
+    state.textContent = message ?? (dirty ? `Unsaved changes` : ``);
+
+    state.className = `options-save-state${dirty ? ` unsaved` : ``}`;
+}
+let workingSettings = { refreshRateInMinutes: DEFAULT_REFRESH_RATE_IN_MINUTES, showEdgeTab: true };
+
+const stripGitHubPrefix = (value) =>
+    value.replace(/^https?:\/\/github\.com\//i, ``).replace(/\/$/, ``);
+
+const describeSyncStatus = (status) => {
+
+    if (status === undefined) {
+        return { text: `Not synced yet`, isError: false };
+    }
+
+    if (status.state === `syncing`) {
+        return { text: `Syncing…`, isError: false };
+    }
+
+    if (status.state === `error`) {
+        return { text: `Sync failed: ${status.message}`, isError: true };
+    }
+
+    if (status.state === `empty`) {
+        return {
+            text: `No templates found. The URL must be the GitHub page for the .md file.`,
+            isError: true
+        };
+    }
 
     return {
-        theme: document.getElementById(`theme`).value,
-        allowEverywhereDefault: document.getElementById(`allowEverywhere`).checked,
-        limitToGitHubOwnerDefault: document.getElementById('limitToGitHubOwner').value,
-        includeIssuesDefault: document.getElementById(`includeIssues`).checked,
-        includePullRequestsDefault: document.getElementById(`includePullRequests`).checked,
-        refreshRateInMinutesDefault: document.getElementById(`refreshRateInMinutes`).value,
-        showSidebarButtonDefault: document.getElementById(`showSidebarButton`).checked,
+        text: `${status.count} ${status.count === 1 ? `template` : `templates`}`,
+        isError: false
     };
 }
 
-const close = async () => {
-    await chrome.tabs.getCurrent((tab) => chrome.tabs.remove(tab.id));
+const paintSyncStatus = (sourceId, status) => {
+
+    const element = statusElements.get(sourceId);
+
+    if (element === undefined) {
+        return;
+    }
+
+    const described = describeSyncStatus(status);
+
+    element.textContent = described.text;
+
+    element.className = `options-source-status${described.isError ? ` error` : ``}`;
+
+    element.closest(`.options-source-header`)
+        ?.classList?.toggle(`syncing`, status?.state === `syncing`);
 }
 
-const save = async () => {
+const loadSyncStatuses = async () => {
 
-    const formValues = getFormValues();
+    for (const source of workingSources) {
 
-    await saveSettings(formValues);
-
-    await close();
-}
-
-const tryEnableLimitToGitHubOwner = () => {
-
-    const allowEverywhere = document.getElementById(`allowEverywhere`);
-    const limitToGitHubOwner = document.getElementById(`limitToGitHubOwner`);
-
-    if (!allowEverywhere.checked) {
-        limitToGitHubOwner.setAttribute(`required`, ``);
-        limitToGitHubOwner.removeAttribute(`disabled`, ``);
-    } else {
-        limitToGitHubOwner.removeAttribute(`required`);
-        limitToGitHubOwner.setAttribute(`disabled`, ``);
+        paintSyncStatus(source.id, await getSyncStatusForSource(source.id));
     }
 }
 
-const capiatlizeWord = (word) =>{
+// Statuses land while the page is open, so they are painted in place rather than
+// by re-rendering, which would throw away whatever is being typed.
+chrome.storage.onChanged.addListener((changes) => {
 
-    
-    const firstLetter = word.charAt(0)
+    for (const [key, { newValue }] of Object.entries(changes)) {
 
-    const firstLetterCap = firstLetter.toUpperCase()
+        if (key.startsWith(`syncStatus:`)) {
 
-    const remainingLetters = word.slice(1)
+            paintSyncStatus(key.slice(`syncStatus:`.length), newValue);
+        }
+    }
+});
 
-    const capitalizedWord = firstLetterCap + remainingLetters
+// The offscreen document exists only because the service worker has no DOM to
+// parse GitHub's rendered page with. This page has one, so it fetches directly
+// rather than asking the worker to do it and waiting on a reply.
+const syncSourceNow = async (source) => {
 
-    return capitalizedWord;
-}
+    const setStatus = async (status) => {
 
-const loadForm = async () => {
+        paintSyncStatus(source.id, status);
 
-    const settings = await getSettings();
-   
-    document.getElementById(`allowEverywhere`).checked = settings.allowEverywhere;
-    document.getElementById('limitToGitHubOwner').value = settings.limitToGitHubOwner;
-    document.getElementById(`includeIssues`).checked = settings.includeIssues;
-    document.getElementById(`includePullRequests`).checked = settings.includePullRequests;
-    document.getElementById(`refreshRateInMinutes`).value = Number(settings.refreshRateInMinutes);
-    document.getElementById(`showSidebarButton`).checked = settings.showSidebarButton ?? true;
+        await saveSyncStatusForSource(source.id, status);
+    };
 
-    const themesElement = document.querySelector(`select`);
+    if (isNullOrEmpty(source.url)) {
 
-    for (let theme of themes) {
+        await setStatus({ state: `error`, message: `No templates URL set.` });
 
-        var option = document.createElement('option');
-
-        option.value = theme;
-
-        option.textContent = capiatlizeWord(theme);
-
-        themesElement.appendChild(option);
+        return;
     }
 
-    document.getElementById(`theme`).value = await getCurrentTheme();
+    await setStatus({ state: `syncing` });
 
-    themesElement.addEventListener(`change`, async (event) => await applyTheme(event.target.value));
+    try {
+        const replies = await fetchSavedRepliesFromUrl(source.url);
 
-    document.getElementById(`allowEverywhere`)
-        .addEventListener(`click`, () => tryEnableLimitToGitHubOwner());
-    
-    tryEnableLimitToGitHubOwner()
+        await saveTemplatesForSource(source.id, replies);
 
-    document.getElementById(`close`)
-        .addEventListener(`click`, async () => await close());
+        await setStatus({
+            state: replies.length === 0 ? `empty` : `ok`,
+            count: replies.length
+        });
+    }
+    catch (error) {
 
-    document.getElementById(`cancel`)
-        .addEventListener(`click`, async () => await close());
-
-    document.getElementById(`save`)
-        .addEventListener(`click`, async () => await save());
-
-    await applyCurrentTheme();
+        await setStatus({ state: `error`, message: error?.message ?? String(error) });
+    }
 }
 
-const initialize = async () => {
+const createLabelledField = (labelText, control, helperText) => {
 
-    console.log("options init");
+    const children = [
+        createElement(`label`, { children: [labelText], className: `options-field-label` }),
+        control
+    ];
 
-    await loadForm();
+    if (helperText) {
 
+        children.push(
+            createElement(`div`, { children: [helperText], className: `options-helper` }));
+    }
+
+    return createElement(`div`, { children: children });
 }
 
-await initialize();
+const createOnOffControl = (value, onChange) =>
+    createSegmentedControl({
+        options: [{ label: `On`, value: true }, { label: `Off`, value: false }],
+        value: value,
+        compact: true,
+        onChange: onChange
+    });
+
+const createOwnerField = (source) => {
+
+    const input = createElement(`input`, {
+        className: `options-owner-input`,
+        type: `text`,
+        value: source.owner,
+        placeholder: `[organization]`,
+        "aria-label": `Organization or user`
+    });
+
+    // Pasting a full organization URL leaves just the name behind.
+    input.addEventListener(`input`, (event) => {
+
+        const stripped = stripGitHubPrefix(event.target.value);
+
+        if (stripped !== event.target.value) {
+
+            event.target.value = stripped;
+        }
+
+        source.owner = stripped;
+
+        updateOwnerWarning(input, source);
+
+        updateSaveState();
+    });
+
+    return createElement(`div`, {
+        children: [
+            createElement(`span`, { children: [`https://github.com/`], className: `options-owner-prefix` }),
+            input,
+            createElement(`span`, { children: [`/`], className: `options-owner-suffix` })
+        ],
+        className: `options-owner-field`
+    });
+}
+
+const updateOwnerWarning = (input, source) => {
+
+    const block = input.closest(`.options-source-block`);
+
+    const existing = block.querySelector(`.options-warning`);
+
+    if (source.owner) {
+
+        existing?.remove();
+
+        return;
+    }
+
+    if (existing) {
+        return;
+    }
+
+    block.append(createElement(`div`, {
+        children: [`Without an organization or user this source will not show anywhere.`],
+        className: `options-warning`
+    }));
+}
+
+const createScopeBlock = (source) => {
+
+    const scopeControl = createSegmentedControl({
+        options: [
+            { label: `All of GitHub`, value: `all` },
+            { label: `One organization or user`, value: `orgs` }
+        ],
+        value: source.scope,
+        compact: true,
+        onChange: (value) => { source.scope = value; render(); }
+    });
+
+    const children = [
+        createElement(`label`, {
+            children: [`Where this source applies`],
+            className: `options-field-label`
+        }),
+        scopeControl
+    ];
+
+    if (source.scope === `orgs`) {
+
+        children.push(
+            createElement(`div`, { children: [createOwnerField(source)], style: `margin-top: 14px` }),
+            createElement(`div`, {
+                children: [`Paste the full organization or user URL and the prefix is stripped for you.`],
+                className: `options-helper`
+            }));
+    }
+
+    const block = createElement(`div`, { children: children, className: `options-source-block` });
+
+    if (source.scope === `orgs` && !source.owner) {
+
+        block.append(createElement(`div`, {
+            children: [`Without an organization or user this source will not show anywhere.`],
+            className: `options-warning`
+        }));
+    }
+
+    return block;
+}
+
+const createSourcePanel = (source, index) => {
+
+    const nameInput = createElement(`input`, {
+        className: `options-text-input`,
+        type: `text`,
+        value: source.name,
+        placeholder: `dvdstelt`,
+        "aria-label": `Name`
+    });
+
+    const heading = createElement(`span`, {
+        children: [source.name || `Untitled source`],
+        className: `options-source-name`
+    });
+
+    nameInput.addEventListener(`input`, (event) => {
+
+        source.name = event.target.value;
+
+        heading.textContent = source.name || `Untitled source`;
+
+        updateSaveState();
+    });
+
+    const urlInput = createElement(`input`, {
+        className: `options-text-input options-mono-input`,
+        type: `text`,
+        value: source.url,
+        placeholder: `https://github.com/dvdstelt/SharedSavedReplies/blob/main/sample-replies.md`,
+        "aria-label": `Templates URL`
+    });
+
+    urlInput.addEventListener(`input`, (event) => {
+
+        source.url = event.target.value;
+
+        updateSaveState();
+    });
+
+    const status = createElement(`span`, { className: `options-source-status` });
+
+    statusElements.set(source.id, status);
+
+    const sync = createElement(`button`, {
+        children: [`Sync`],
+        className: `options-source-sync`,
+        type: `button`,
+        title: `Fetch this source's templates now`
+    });
+
+    // Syncs whatever is in the fields right now, so a URL can be checked before
+    // it is saved.
+    sync.addEventListener(`click`, async () => {
+
+        sync.disabled = true;
+
+        await syncSourceNow(source);
+
+        sync.disabled = false;
+    });
+
+    const remove = createElement(`button`, {
+        children: [`Remove`],
+        className: `options-source-remove`,
+        type: `button`
+    });
+
+    remove.addEventListener(`click`, () => {
+
+        workingSources = workingSources.filter((candidate) => candidate !== source);
+
+        render();
+    });
+
+    return createElement(`div`, {
+        children: [
+            createElement(`div`, {
+                children: [
+                    createElement(`div`, {
+                        children: [
+                            createElement(`span`, {
+                                children: [String(index + 1).padStart(2, `0`)],
+                                className: `options-source-index`
+                            }),
+                            heading
+                        ],
+                        className: `options-source-heading`
+                    }),
+                    createElement(`div`, {
+                        children: [status, sync, remove],
+                        className: `options-source-heading`
+                    })
+                ],
+                className: `options-source-header`
+            }),
+            createElement(`div`, {
+                children: [
+                    createElement(`div`, {
+                        children: [
+                            createLabelledField(`Name`, nameInput),
+                            createLabelledField(`Templates URL`, urlInput,
+                                `The GitHub page for the .md file, not the raw URL. Private repos work if you can read them.`)
+                        ],
+                        className: `options-source-identity`
+                    }),
+                    createScopeBlock(source),
+                    createElement(`div`, {
+                        children: [
+                            createElement(`div`, {
+                                children: [
+                                    createLabelledField(`Applies to issues`,
+                                        createOnOffControl(source.issues !== false,
+                                            (value) => { source.issues = value; render(); })),
+                                    createLabelledField(`Applies to pull requests`,
+                                        createOnOffControl(source.prs !== false,
+                                            (value) => { source.prs = value; render(); }))
+                                ],
+                                className: `options-applies-grid`
+                            })
+                        ],
+                        className: `options-source-block`
+                    })
+                ],
+                className: `options-source-body`
+            })
+        ],
+        className: `options-source`
+    });
+}
+
+const updateTriggerWarning = (input) => {
+
+    const field = input.parentElement;
+
+    const existing = field.querySelector(`.options-warning`);
+
+    if (workingSettings.inlineTrigger) {
+
+        existing?.remove();
+
+        return;
+    }
+
+    if (existing === null) {
+
+        field.append(createElement(`div`, {
+            children: [`Without a trigger the inline menu cannot open.`],
+            className: `options-warning`
+        }));
+    }
+}
+
+const createGlobalStrip = () => {
+
+    const refreshInput = createElement(`input`, {
+        className: `options-number-input`,
+        type: `number`,
+        min: `1`,
+        max: `1440`,
+        value: String(workingSettings.refreshRateInMinutes),
+        "aria-label": `Refresh rate in minutes`
+    });
+
+    refreshInput.addEventListener(`input`, (event) => {
+
+        workingSettings.refreshRateInMinutes = event.target.value;
+
+        updateSaveState();
+    });
+
+    const triggerInput = createElement(`input`, {
+        className: `options-text-input options-mono-input options-trigger-input`,
+        type: `text`,
+        value: workingSettings.inlineTrigger,
+        maxlength: `4`,
+        "aria-label": `Inline menu trigger`
+    });
+
+    // Whitespace would never survive the start-of-word rule, and an empty
+    // trigger would match everywhere.
+    triggerInput.addEventListener(`input`, (event) => {
+
+        const cleaned = event.target.value.replace(/\s+/g, ``);
+
+        if (cleaned !== event.target.value) {
+            event.target.value = cleaned;
+        }
+
+        workingSettings.inlineTrigger = cleaned;
+
+        updateTriggerWarning(triggerInput);
+
+        updateSaveState();
+    });
+
+    return createElement(`div`, {
+        children: [
+            createElement(`div`, { children: [`Global`], className: `options-section-label` }),
+            createElement(`div`, {
+                children: [
+                    createLabelledField(`Refresh rate in minutes`, refreshInput,
+                        `How often every source is re-fetched and cached. A refresh takes a few hundred milliseconds.`),
+                    createLabelledField(`Show edge tab on GitHub`,
+                        createOnOffControl(workingSettings.showEdgeTab,
+                            (value) => { workingSettings.showEdgeTab = value; render(); }),
+                        `Off still leaves the replies in GitHub's own saved-replies dialog and in the extension popup.`),
+                    createLabelledField(`Inline template menu`,
+                        createOnOffControl(workingSettings.inlineMenuEnabled,
+                            (value) => { workingSettings.inlineMenuEnabled = value; render(); }),
+                        `Typing the trigger in a GitHub comment opens a filtered list of templates at the cursor.`),
+                    createLabelledField(`Trigger`, triggerInput,
+                        `Recognised at the start of a word. Use more than one character if you want it to fire less readily.`)
+                ],
+                className: `options-global-grid`
+            })
+        ],
+        className: `options-global`
+    });
+}
+
+const createActionBar = (lastSyncedAt) => {
+
+    const save = createElement(`button`, {
+        children: [`Save`],
+        className: `options-button primary`,
+        type: `button`
+    });
+
+    save.addEventListener(`click`, async () => {
+
+        await saveSources(workingSources);
+
+        await saveGlobalSettings(workingSettings);
+
+        await load();
+
+        updateSaveState(`Saved`);
+
+        setTimeout(() => updateSaveState(), 2000);
+    });
+
+    const cancel = createElement(`button`, {
+        children: [`Cancel`],
+        className: `options-button ghost`,
+        type: `button`
+    });
+
+    cancel.addEventListener(`click`, async () => await load());
+
+    return createElement(`div`, {
+        children: [
+            save,
+            cancel,
+            createElement(`div`, { className: `options-save-state` }),
+            createElement(`div`, {
+                children: [`Last ${describeMinutesSince(lastSyncedAt)}`],
+                className: `options-last-sync`
+            })
+        ],
+        className: `options-actions`
+    });
+}
+
+let lastSyncedAt = null;
+
+const render = () => {
+
+    statusElements.clear();
+
+    const root = document.getElementById(`options`);
+
+    const addSource = createElement(`button`, {
+        children: [createPlusIcon(), createElement(`span`, { children: [`Add source`] })],
+        className: `options-add-source`,
+        type: `button`
+    });
+
+    addSource.addEventListener(`click`, () => {
+
+        workingSources.push(createEmptySource());
+
+        render();
+    });
+
+    root.replaceChildren(
+        createElement(`div`, {
+            children: [
+                createElement(`div`, {
+                    children: [
+                        createElement(`div`, {
+                            children: [`Team Saved Replies`],
+                            className: `options-kicker`
+                        }),
+                        createElement(`h1`, { children: [`Settings`], className: `options-title` })
+                    ]
+                }),
+                createElement(`div`, {
+                    children: [`v${chrome.runtime.getManifest().version}`],
+                    className: `options-version`
+                })
+            ],
+            className: `options-header`
+        }),
+        createGlobalStrip(),
+        createElement(`div`, {
+            children: [
+                createElement(`div`, { children: [`Sources`], className: `options-section-label` }),
+                createElement(`div`, {
+                    children: [
+                        `${workingSources.length} ${workingSources.length === 1 ? `source` : `sources`}`
+                    ],
+                    className: `options-sources-count`
+                })
+            ],
+            className: `options-sources-head`
+        }),
+        ...workingSources.map(createSourcePanel),
+        createElement(`div`, { children: [addSource], className: `options-add-source-row` }),
+        createActionBar(lastSyncedAt));
+
+    updateSaveState();
+}
+
+const load = async () => {
+
+    workingSources = (await getSources()).map((source) => ({ ...source }));
+
+    workingSettings = await getGlobalSettings();
+
+    lastSyncedAt = await getLastSyncedAt();
+
+    savedSnapshot = snapshotOfWorkingCopy();
+
+    render();
+
+    await loadSyncStatuses();
+}
+
+load();
+
+// Closing the tab is the one way to lose pending edits without meaning to.
+window.addEventListener(`beforeunload`, (event) => {
+
+    if (hasUnsavedChanges()) {
+
+        event.preventDefault();
+
+        event.returnValue = ``;
+    }
+});

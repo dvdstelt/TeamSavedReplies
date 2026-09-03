@@ -1,0 +1,67 @@
+/* Injected into GitHub, so these cannot lean on the token stylesheet the
+   extension's own pages load. */
+.team-saved-replies-inline-menu {
+    position: absolute;
+    z-index: 10000;
+    box-sizing: border-box;
+    min-width: 260px;
+    max-width: 380px;
+    max-height: 240px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    background: #f3f2f2;
+    border: 2px solid #201e1d;
+    border-radius: 0;
+    box-shadow: 0 3px 10px rgba(45, 43, 43, 0.16);
+    font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.team-saved-replies-inline-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    background: #f3f2f2;
+    border: none;
+    border-bottom: 1px solid #d7d3d3;
+    border-radius: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.team-saved-replies-inline-option:last-child {
+    border-bottom: none;
+}
+
+.team-saved-replies-inline-option.active {
+    background: #ffffff;
+    box-shadow: inset 3px 0 0 #ec3013;
+}
+
+.team-saved-replies-inline-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #201e1d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.team-saved-replies-inline-badge {
+    flex: none;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ae1800;
+    border: 1px solid #ec3013;
+    background: rgba(236, 48, 19, 0.1);
+    padding: 1px 5px;
+}
