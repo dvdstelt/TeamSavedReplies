@@ -7,7 +7,8 @@
 # from the same old number again. The change is left unstaged for review.
 #
 # Usage:
-#   ./package.sh                       package at the manifest's current version
+#   ./package.sh                       package chrome at the manifest's version
+#   ./package.sh --target firefox      package firefox instead
 #   ./package.sh patch                 0.1.0 -> 0.1.1, then package
 #   ./package.sh minor                 0.1.0 -> 0.2.0, then package
 #   ./package.sh major                 0.1.0 -> 1.0.0, then package
@@ -54,8 +55,9 @@ command -v python3 >/dev/null || die "python3 is required"
 # substitution would only exit the subshell and let packaging carry on.
 # Firefox slots in as another branch once its port lands.
 case "$TARGET" in
-    chrome) SOURCE_DIR="$REPO_ROOT/src/ChromeExtension" ;;
-    *)      die "unknown target '$TARGET' (supported: chrome)" ;;
+    chrome)  SOURCE_DIR="$REPO_ROOT/src/ChromeExtension" ;;
+    firefox) SOURCE_DIR="$REPO_ROOT/src/FirefoxExtension" ;;
+    *)       die "unknown target '$TARGET' (supported: chrome, firefox)" ;;
 esac
 readonly SOURCE_DIR
 
@@ -146,11 +148,16 @@ problems = []
 manifest = json.load(io.open(os.path.join(root, 'manifest.json'), encoding='utf-8'))
 
 referenced = []
-for key in (('action', 'default_popup'), ('background', 'service_worker'),
-            ('side_panel', 'default_path'), ('options_ui', 'page')):
-    value = manifest.get(key[0], {}).get(key[1])
+# Chrome and Firefox describe the same things differently: a service worker
+# against background scripts, a side panel against a sidebar.
+for section, key in (('action', 'default_popup'), ('background', 'service_worker'),
+                     ('side_panel', 'default_path'), ('sidebar_action', 'default_panel'),
+                     ('options_ui', 'page')):
+    value = manifest.get(section, {}).get(key)
     if value:
         referenced.append(value)
+
+referenced += manifest.get('background', {}).get('scripts', [])
 for script in manifest.get('content_scripts', []):
     referenced += script.get('js', []) + script.get('css', [])
 referenced += list(manifest.get('icons', {}).values())
@@ -195,7 +202,7 @@ PY
 fi
 
 mkdir -p "$OUTPUT_DIR"
-readonly ARCHIVE="$OUTPUT_DIR/$SLUG-$PACKAGE_VERSION.zip"
+readonly ARCHIVE="$OUTPUT_DIR/$SLUG-$TARGET-$PACKAGE_VERSION.zip"
 rm -f "$ARCHIVE"
 
 # Zipped from inside the staging directory so manifest.json sits at the archive
@@ -212,7 +219,7 @@ printf '  size    : %s across %s files\n' "$size" "$file_count"
 # Hand the details to the workflow when running in GitHub Actions.
 if [ -n "${GITHUB_ENV:-}" ] && [ -f "${GITHUB_ENV}" ]; then
     {
-        printf 'EXTENSION=%s\n' "$SLUG-$PACKAGE_VERSION"
+        printf 'EXTENSION=%s\n' "$SLUG-$TARGET-$PACKAGE_VERSION"
         printf 'EXTENSION_ZIP=%s\n' "$ARCHIVE"
         printf 'EXTENSION_VERSION=%s\n' "$PACKAGE_VERSION"
     } >> "$GITHUB_ENV"
