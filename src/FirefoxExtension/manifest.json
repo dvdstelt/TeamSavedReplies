@@ -51,7 +51,6 @@
         "https://github.com/*"
       ],
       "css": [
-        "pages/sidepanel/sidepanel-button.css",
         "pages/content-script/inline-template-menu.css"
       ],
       "js": [
@@ -70,7 +69,6 @@
         "pages/content-script/content-script-copy-saved-reply-element.js",
         "pages/content-script/content-script-urls.js",
         "pages/content-script/content-script-messaging.js",
-        "pages/sidepanel/saved-replies-sidepanel-toggle-button.js",
         "pages/content-script/inline-template-menu.js",
         "pages/content-script/content-script.js"
       ]
@@ -87,16 +85,6 @@
     "page": "pages/options/options.html",
     "open_in_tab": true
   },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "pages/sidepanel/*.svg"
-      ],
-      "matches": [
-        "https://github.com/*"
-      ]
-    }
-  ],
   "permissions": [
     "activeTab",
     "tabs",

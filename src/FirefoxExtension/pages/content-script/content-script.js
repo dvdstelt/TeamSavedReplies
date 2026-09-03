@@ -24,6 +24,13 @@ const addEdgeTab = async () => {
 // not merely stop the next one being added.
 const applyEdgeTabVisibility = async () => {
 
+    // Firefox has no edge tab: its sidebar can only be opened from a user input
+    // handler, which a click in the page is not. The build simply does not ship
+    // the button, so there is nothing to manage.
+    if (typeof createShowSavedRepliesButton !== "function") {
+        return;
+    }
+
     if (!await isEdgeTabEnabled() || !shouldLoadContentScript(window.location.href)) {
 
         removeEdgeTab();
