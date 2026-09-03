@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 on:
   push:
     branches:
@@ -9,31 +9,49 @@ on:
 env:
   DOTNET_NOLOGO: true
 jobs:
-  build:
-    name: Linux
+  extensions:
+    name: Extensions
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        target: [chrome, firefox]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.0.0
+        uses: actions/checkout@v4
+      # Packaging verifies as it goes: every file the manifest and the pages
+      # reference has to exist, and every script has to parse. It refuses to
+      # write an archive otherwise, so a broken build fails here.
+      - name: Package and verify ${{ matrix.target }}
+        run: ./package.sh --target ${{ matrix.target }}
+      - name: Upload ${{ matrix.target }} package
+        uses: actions/upload-artifact@v4
         with:
-          fetch-depth: 0
+          name: ${{ matrix.target }}-package
+          path: dist/*.zip
+          retention-days: 7
+
+  dotnet:
+    name: Test project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3.2.0
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
       - name: Build
-        run: dotnet build src --configuration Release 
-      - name: Install Playwright
-        run: ./install.ps1
-        shell: pwsh   
+        run: dotnet build src --configuration Release
+      # The Playwright tests are not run. Installing browsers for them was
+      # pointless, and the script that did it has gone; the step below is what
+      # would bring them back.
       # - name: Run tests
       #   env:
       #     DEBUG: pw:browser
       #     LIBGL_ALWAYS_INDIRECT: 1
       #     DISPLAY: 0
       #   uses: coactions/setup-xvfb@v1
-      #   with: 
+      #   with:
       #     run: dotnet test
       #     working-directory: ./src/Tests/Tests

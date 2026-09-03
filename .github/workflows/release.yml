@@ -1,78 +1,86 @@
-﻿name: Release
+name: Release
 on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
       - '[0-9]+.[0-9]+.[0-9]+-*'
-env:
-  DOTNET_NOLOGO: true
+  workflow_dispatch:
 jobs:
-  package-chrome-extension:
-    runs-on: ubuntu-22.04
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [chrome, firefox]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.0.0
+        uses: actions/checkout@v4
+
+      # The tag is the version, so there is nothing to derive it from history.
+      # A manual run falls back to whatever the manifest already says.
+      - name: Work out the version
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            printf 'version=%s\n' "${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            printf 'version=\n' >> "$GITHUB_OUTPUT"
+          fi
+
+      # Packaging verifies before it writes, so a release cannot be cut from a
+      # build whose manifest points at files that are not there.
+      - name: Package ${{ matrix.target }}
+        run: |
+          if [ -n "${{ steps.version.outputs.version }}" ]; then
+            ./package.sh --target ${{ matrix.target }} --version "${{ steps.version.outputs.version }}"
+          else
+            ./package.sh --target ${{ matrix.target }}
+          fi
+
+      - name: Upload ${{ matrix.target }} package
+        uses: actions/upload-artifact@v4
         with:
-          fetch-depth: 0
-          retention-days: 1
-      - name: "Setup .NET SDK"
-        uses: actions/setup-dotnet@v3.2.0
-        with:
-            dotnet-version: 6.0.x          
-      - name: "Install Minver"
-        run: dotnet tool install --global minver-cli
-      - name: Set Minver version
-        shell: pwsh
-        run: $env:MINVER_VERSION = $(minver -v warn)        
-      - name: Package extension      
-        env: 
-          MINVER_VERSION: ${{ env.MINVER_VERSION }}       
-          EXTENSION_NAME: team-saved-replies
-          PACKAGE_PATH: 
-        shell: pwsh
-        run: .\package.ps1 
-          -extensionName ${{ env.EXTENSION_NAME }}
-          -minverVersion ${{ env.MINVER_VERSION}}
-          -packagePath ${{env.PACKAGE_PATH}}
-      - name: Publish artifacts
-        uses: actions/upload-artifact@v3.1.3
-        with:
-          name: ${{ env.EXTENSION}}
-          path: ${{ env.EXTENSION_ZIP}}
-      - uses: browser-actions/setup-chrome@v
-      - run : chrome --pack-extension=${{ env.PACKAGE_PATH}}/${{ env.EXTENSION_NAME}}
-  # api usage reference:
-  # * <https://developer.chrome.com/docs/webstore/using_webstore_api/>
-  # * <https://github.com/fregante/chrome-webstore-upload/blob/main/How%20to%20generate%20Google%20API%20keys.md>
-  publish-extension:
-    name: Publish extension
+          name: ${{ matrix.target }}-package
+          path: dist/*.zip
+          if-no-files-found: error
+
+  publish-chrome:
+    name: Publish to the Chrome Web Store
     runs-on: ubuntu-latest
-    needs: package-chrome-extension
-    env:
-      # The Chrome Web Store listing this fork publishes to. Set the EXTENSION_ID
-      # repository variable to your own listing's ID before enabling releases;
-      # it is deliberately not hardcoded so a release can never be pushed to the
-      # upstream project's listing.
-      EXTENSION_ID: ${{ vars.EXTENSION_ID }}
+    needs: package
+    # Skipped until the store listing exists and EXTENSION_ID names it, so a tag
+    # can never publish into somebody else's listing.
+    if: vars.EXTENSION_ID != ''
     steps:
-      - uses: actions/setup-node@v2-beta
+      - name: Download the chrome package
+        uses: actions/download-artifact@v4
         with:
-          node-version: "16.10"
+          name: chrome-package
+          path: dist
 
-      - name: Download bundle artifact
-        uses: actions/download-artifact@v3
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          name: ${{ env.EXTENSION}}
+          node-version: '20'
 
-      - name: Install webstore cli
-        run: |-
-          npm install -g chrome-webstore-upload-cli
+      - name: Install the webstore cli
+        run: npm install -g chrome-webstore-upload-cli
 
-      - name: Upload step
-        run: |-
-          chrome-webstore-upload upload \\
-            --source  ${{ env.EXTENSION_ZIP}} \\
-            --extension-id ${{ env.EXTENSION_ID }} \\
-            --client-id ${{ secrets.CI_GOOGLE_CLIENT_ID }} \\
-            --client-secret ${{ secrets.CI_GOOGLE_CLIENT_SECRET }} \\
-            --refresh-token ${{ secrets.CI_GOOGLE_REFRESH_TOKEN }}
+      # Docs for the api this uses:
+      # https://developer.chrome.com/docs/webstore/using_webstore_api/
+      - name: Upload
+        env:
+          EXTENSION_ID: ${{ vars.EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CI_GOOGLE_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CI_GOOGLE_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CI_GOOGLE_REFRESH_TOKEN }}
+        run: |
+          archive="$(ls dist/*.zip | head -1)"
+          echo "uploading $archive"
+          chrome-webstore-upload upload \
+            --source "$archive" \
+            --extension-id "$EXTENSION_ID" \
+            --client-id "$CLIENT_ID" \
+            --client-secret "$CLIENT_SECRET" \
+            --refresh-token "$REFRESH_TOKEN"
