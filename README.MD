@@ -1,95 +1,115 @@
-## What is Team Saved Replies
+# Team Saved Replies
 
-Team Saved Replies is a browser extension that allows teams to create `saved replies` for use on GitHub.com. It will populate the saved replies list when adding a new comment to an issue or pull request in a GitHub repository. For teams continuously evolving the structure and requirements of their saved replies templates this extension will keep the saved replies up to date, by updating and caching them on a schedule set up the user.
+GitHub's saved replies are personal. Everyone on a team ends up writing their own version of the same answer, and over time they drift apart.
 
-![Saved Replies Example](https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/images/main_screen_shot.png)
+Team Saved Replies keeps them in one markdown file in a repository you already have. Anyone who can read that file gets the same replies, and when someone improves one, everyone picks it up on the next refresh.
 
-## Where do I get it?
+Type `!` in any comment box and the templates are right there:
 
-This fork is not published to the Chrome Web Store or Firefox Add-ons yet, so load it from source:
+![The inline menu open in a GitHub comment box](docs/images/comment.png)
 
-For Chrome or Edge users:
-- Clone this repository, open `chrome://extensions`, enable "Developer mode", click "Load unpacked" and select `src/ChromeExtension`.
+Keep typing to narrow the list, press Enter to insert. The list is ordered by what you use most, so the reply you reach for daily is usually the first one. The trigger can be changed or switched off in settings.
 
-For Firefox users:
-- Clone this repository, open `about:debugging#/runtime/this-firefox`, click "Load Temporary Add-on" and select `src/FirefoxExtension/manifest.json`.
+## Where the templates show up
 
-It uses its own name and add-on ID, so it can be installed alongside the original extension without conflicting with it.
+Four places, so you can reach them whichever way suits what you are doing.
 
-## How do I use it? 
+**As you type.** The `!` menu above. The fastest route once you know your templates by name.
 
-### Create saved reply templates
+**In GitHub's own saved replies dialog**, alongside your personal ones, on issues and pull requests.
 
-To create a saved reply template create a mark down file in a GitHub repository. 
+![Team templates in GitHub's saved replies dialog](docs/images/replies.png)
 
-1. Add a saved reply name in an h2. 
+**In the extension popup**, as a searchable list. Click a row to copy it to the clipboard. Search covers template names; tick the box to search inside the content too.
 
-1. Add a markdown code block immediately after the H2 saved reply name. 
+![The extension popup](docs/images/popup.png)
 
-1. commit the file to repostiory and make sure its a .md file accessible at GitHub.com 
-   - This file can be used with private organizations, the people using the template will need to have permssions to the org or repo in able to be able to share the saved replies. 
+**In a side panel**, with what you used recently at the top, grouped by repository. Clicking a row inserts it into the comment box you are writing in, or copies it if there isn't one. The tab on the edge of the page opens and closes the panel, and you can drag it to wherever you want it.
 
-Instructions for use and multiple saved replies can be added in the same file. The extension is looking for the H2 (##) followed by the markdown code section pattern in a .md file. 
+![The side panel and the edge tab](docs/images/sidebar.png)
 
-#### Example Saved Reply Temple
+## Writing the templates
+
+Templates live in a markdown file in a GitHub repository. The format is a heading for the name, then a fenced code block for the reply itself:
 
 <pre>
-# our Teams Saved Replies
+# Our team's saved replies
 
-These replies are to be used by our team to facilitate consistent communication. 
+These replies are used by our team to keep our communication consistent.
 
 ## Work Started
-```markdown 
-<!-- Fill out the following information -->
+```markdown
+&lt;!-- Fill out the following information --&gt;
 
-## 🚀 Work Started 
+## 🚀 Work Started
 
 ### 📝 High level plan
 
-<!-- include any details that may be useful for other reading this comment -->
+&lt;!-- Anything useful for others reading this comment --&gt;
 
-### ⏲ Update schedule 
+### ⏲ Update schedule
 
-<!-- How often do you plan to communicate updates -->
+&lt;!-- How often do you plan to communicate updates? --&gt;
 ```
 
 ## Work Completed
 ```markdown
-## 🎉Work Complete
+## 🎉 Work Complete
 
-<!-- share any information that may be valuable to people reading this message 
-  including include related issues, prs, or any other details -->
+&lt;!-- Related issues, pull requests, or anything else worth knowing --&gt;
 ```
 </pre>
 
-### Using the extension
+The extension looks for that pattern: an `##` heading followed by a fenced code block. Anything else in the file, including instructions for whoever maintains it, is ignored. Put as many replies in one file as you like.
 
-#### Install and configure the extension
+Commit it and note the URL of the file's page on GitHub. Private repositories work: the extension fetches the page using your own GitHub session, so anyone who can already read the repository gets the templates.
 
-1. Install the extension by following the steps in [Where do I get it?](#where-do-i-get-it) above.
-1. Pin the extension.
-1. Click on the pinned extension icon.
-1. Click the plus button. 
+## Installing
 
-![Popup Screen](https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/images/popup.png)
+Not published to the Chrome Web Store or Firefox Add-ons yet, so load it from source.
 
-1. For "Saved Replies Url": Enter the GitHub url of the the saved replies .md file that was created prevoulsy. (This should not be the raw url).
-1. For "Name", Provide a unique name for the configuration. 
-1. For "Use with all GitHub repositories" If the saved replies should be used across all of GitHub then switch the toggle to on. If not switch it off and enter the name of a github organization or user that you want to limit the replies to in "Limit to this GitHub organization or user" 
-1. For "Applies to Issues" If the saved replies should show for issues switch the toggle on, if they shouldn't be shown for issues switch the toggle to off. 
-2. For "Applies to Pull Request" If the saved replies should show for pull requests switch the toggle on, if they shouldn't be shown for pull requests switch the toggle to off. 
-1. Set the refresh rate of how often the saved replies will be updated. The default is every 30 minutes. (This process only takes a few hundred milliseconds to perform.)
-1. Click save.
+**Chrome or Edge**: clone this repository, open `chrome://extensions`, turn on "Developer mode", click "Load unpacked" and select `src/ChromeExtension`.
 
-![Add Saved Replies Screen](https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/images/Add_Screen.png)
+**Firefox**: clone this repository, open `about:debugging#/runtime/this-firefox`, click "Load Temporary Add-on" and select `src/FirefoxExtension/manifest.json`.
 
+It uses its own name and add-on ID, so it installs alongside the original extension without conflicting with it.
 
-#### Use the saved replies
+> **Firefox is behind.** The redesign, the inline menu and the reworked settings are Chrome only for now. The Firefox build still has the older interface.
 
-1. Navigate to either an issue or pull request and clicked the "saved replies" icon on the new comment menu and see your saved replies appear. 
+## Configuring it
 
-![Click on Save Replies Icon](https://github.com/dvdstelt/SharedSavedReplies/blob/main/docs/images/click_saved_replies_icon.png)
+Open the settings from the gear in the popup or the side panel.
+
+![The settings page](docs/images/config.png)
+
+**Refresh rate** is how often every source is re-fetched. **Show edge tab on GitHub** controls the tab on the edge of the page. **Inline template menu** and **Trigger** control the `!` menu.
+
+Then add a source for each template file:
+
+- **Name** is what appears as the group heading in the lists.
+- **Templates URL** is the GitHub page for the `.md` file, not the raw URL.
+- **Where this source applies** is either all of GitHub, or a single organisation or user. Paste a full organisation URL and the prefix is stripped for you.
+- **Applies to issues** and **Applies to pull requests** decide which kinds of page it shows up on.
+
+Add as many sources as you like. A source scoped to your own organisation and one for an open source project you maintain can sit side by side without getting in each other's way.
+
+**Sync** on a source fetches it immediately and reports what came back, so you can check a URL works before committing to it. Changes are only stored when you press **Save**.
+
+## Building a package
+
+```
+./package.sh          # package at the current version
+./package.sh patch    # bump the patch version first
+./package.sh minor
+./package.sh major
+```
+
+The archive lands in `dist/`. Packaging refuses to write an archive that references files it does not contain, or that carries a script which does not parse.
+
+## Security and privacy
+
+Nothing is collected and nothing is sent anywhere. See [the privacy policy](docs/privacy-policy.md) for exactly what is stored and the single network request the extension makes, and [the security policy](SECURITY.md) for how to report a vulnerability.
 
 ## Credits
 
-Team Saved Replies is a fork of [awright18/SharedSavedReplies](https://github.com/awright18/SharedSavedReplies) by Andrew Wright. It carries the changes from [awright18/SharedSavedReplies#34](https://github.com/awright18/SharedSavedReplies/pull/34), which adds injection into GitHub's native saved replies dialog on both issue and pull request pages.
+Team Saved Replies is a fork of [awright18/SharedSavedReplies](https://github.com/awright18/SharedSavedReplies) by Andrew Wright. It carries the changes from [awright18/SharedSavedReplies#34](https://github.com/awright18/SharedSavedReplies/pull/34), which added injection into GitHub's native saved replies dialog on both issue and pull request pages.
