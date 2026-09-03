@@ -74,6 +74,24 @@ One per permission; review rejects vague answers.
 | `activeTab` | See the note below; likely removable. |
 | `https://github.com/*` | The extension only runs on GitHub, and fetches the templates file from the GitHub URL the user configured. |
 
+## Host permissions justification
+
+Every match pattern in the manifest is the same one, `https://github.com/*`, in `host_permissions`, `content_scripts` and `web_accessible_resources`. No wildcard and no `<all_urls>`, which is the thing this field is really screening for.
+
+> The extension declares one host pattern, https://github.com/*, in host_permissions, content_scripts and web_accessible_resources. It is the only pattern requested and the extension does nothing on any other site.
+>
+> It is needed for three things, all on github.com:
+>
+> 1. Running the content script that adds the team's shared templates into GitHub's own saved replies list on issues and pull requests, and inserts a chosen template into the comment box at the cursor.
+> 2. Fetching the templates themselves. The user configures a GitHub URL pointing at a markdown file in a repository, and the extension requests that page to read the templates from it. The request uses the user's existing GitHub session, which is why templates in a private repository work for users who can already read that repository.
+> 3. Serving the extension's own icon to the GitHub page it injects into.
+>
+> No wildcard or <all_urls> pattern is requested. The permission is not used to observe browsing: the current tab's URL is read only to decide which of the user's configured template sources apply to the page being viewed, and it is never transmitted anywhere.
+
+Shorter, if the field is cramped:
+
+> https://github.com/* is the only host pattern requested. It is required to inject the team's shared reply templates into GitHub's comment and saved-replies UI, and to fetch the user-configured markdown file those templates come from. The extension runs on no other site and requests no wildcard pattern.
+
 ### `activeTab` is probably unnecessary
 
 Content scripts are declared for `https://github.com/*` and the matching host permission is already requested, so the temporary access `activeTab` grants is not obviously used by anything. Removing it would shorten the install prompt. It should be dropped only after confirming in a real install that the popup, side panel and edge tab all still work.
