@@ -130,12 +130,18 @@ chrome.runtime.onMessage.addListener((request) => {
 
     if (canHandleCommand(request, SERVICE_WORKER, `OpenTeamSavedRepliesPanel`)) {
 
+        // Firefox only opens a sidebar from a user input handler, and the gesture
+        // does not survive runtime.sendMessage, so this is refused when it comes
+        // from the edge tab in the page. The keyboard command and the context
+        // menu entry go through a handler that does count.
         try {
             browser.sidebarAction.toggle();
         }
         catch (error) {
 
-            console.log(`could not toggle the sidebar without a user gesture`, error);
+            console.warn(
+                `Firefox refused to open the sidebar from a page click: ${error?.message ?? error}. `
+                + `Use the keyboard shortcut or right click a comment box instead.`);
         }
     }
 });
