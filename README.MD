@@ -24,9 +24,11 @@ Four places, so you can reach them whichever way suits what you are doing.
 
 ![The extension popup](docs/images/popup.png)
 
-**In a side panel**, with what you used recently at the top, grouped by repository. Clicking a row inserts it into the comment box you are writing in, or copies it if there isn't one. The tab on the edge of the page opens and closes the panel, and you can drag it to wherever you want it.
+**In a side panel**, with what you used recently at the top, grouped by repository. Clicking a row inserts it into the comment box you are writing in, or copies it if there isn't one.
 
 ![The side panel and the edge tab](docs/images/sidebar.png)
+
+On Chrome the tab on the edge of the page opens and closes the panel, and you can drag it wherever you want it. **Firefox has no edge tab**: it only opens a sidebar from a keyboard shortcut, a toolbar button or a menu entry, never from a click inside the page. Open it there with `Ctrl+Shift+Y`, or by right-clicking a comment box and choosing "Toggle saved replies".
 
 ## Writing the templates
 
@@ -74,7 +76,7 @@ Not published to the Chrome Web Store or Firefox Add-ons yet, so load it from so
 
 It uses its own name and add-on ID, so it installs alongside the original extension without conflicting with it.
 
-> **Firefox is behind.** The redesign, the inline menu and the reworked settings are Chrome only for now. The Firefox build still has the older interface.
+> **One difference on Firefox.** Everything is there except the edge tab on the side of the GitHub page, which Firefox cannot support: sidebars only open from a keyboard shortcut, a toolbar button or a menu entry, never from a click inside the page. Use `Ctrl+Shift+Y` or right-click a comment box instead.
 
 ## Configuring it
 
@@ -82,7 +84,7 @@ Open the settings from the gear in the popup or the side panel.
 
 ![The settings page](docs/images/config.png)
 
-**Refresh rate** is how often every source is re-fetched. **Show edge tab on GitHub** controls the tab on the edge of the page. **Inline template menu** and **Trigger** control the `!` menu.
+**Refresh rate** is how often every source is re-fetched. **Show edge tab on GitHub** controls the tab on the edge of the page, on Chrome. **Inline template menu** and **Trigger** control the `!` menu.
 
 Then add a source for each template file:
 
