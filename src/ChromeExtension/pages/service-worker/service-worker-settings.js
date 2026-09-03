@@ -1,40 +1,20 @@
 const getInitalSettings = () => {
-    
+
     console.log(`initial settings`);
 
     return {
-        theme: `default`,
-        allowEverywhereDefault: true,
-        limitToGitHubOwnerDefault: ``,
-        includeIssuesDefault: true,
-        includePullRequestsDefault: true,
-        refreshRateInMinutesDefault: `5`,
-        showSidebarButtonDefault: true,
+        refreshRateInMinutes: DEFAULT_REFRESH_RATE_IN_MINUTES,
+        showEdgeTab: true
     }
-}
-
-const getSettings = async () =>{
-    const result = await chrome.storage.local.get([`settings`]);
-
-    if(arrayIsNullOrEmpty(result) || isNullOrEmpty(result[`settings`])){
-        return null;
-    }
-
-    return result[`settings`];
 }
 
 const saveInitialSettings = async () => {
 
-    const cachedSettings = await getSettings();
+    const result = await chrome.storage.local.get([SETTINGS_KEY]);
 
-    if(cachedSettings){
+    if (!isNullOrEmpty(result[SETTINGS_KEY])) {
         return;
     }
 
-    const initialSettings = getInitalSettings();
-
-    await chrome.storage.local.set({
-        [`settings`]: initialSettings,
-        [`applied-theme`]:initialSettings.theme
-    });
+    await chrome.storage.local.set({ [SETTINGS_KEY]: getInitalSettings() });
 }

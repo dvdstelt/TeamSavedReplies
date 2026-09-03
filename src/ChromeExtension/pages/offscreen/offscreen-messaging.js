@@ -1,28 +1,10 @@
-import { canHandleCommand, createCommand, send } from "../../js/modules/messaging.js";
+import { canHandleCommand } from "../../js/modules/messaging.js";
 
 const OFFSCREEN = "offscreen";
-const SERVICE_WORKER = "service-worker";
 
-const handleUpdateTeamSavedRepliesCommand = async (message, handleMessage) => {
-    if (!canHandleCommand(message, OFFSCREEN, `UpdateTeamSavedReplies`)) {
-        return;
-    }
+const UPDATE_TEAM_SAVED_REPLIES = `UpdateTeamSavedReplies`;
 
-    await handleMessage(message.data.name, message.data.url);
-}
+const canHandleUpdateTeamSavedRepliesCommand = (message) =>
+    canHandleCommand(message, OFFSCREEN, UPDATE_TEAM_SAVED_REPLIES);
 
-const sendSaveTeamSavedRepliesCommand = async (name, teamSavedReplies) => {
-
-    const command =
-        createCommand(
-            `SaveTeamSavedReplies`,
-            SERVICE_WORKER,
-            {
-                name: name,
-                replies: teamSavedReplies
-            });
-
-    await send(command);
-}
-
-export { handleUpdateTeamSavedRepliesCommand, sendSaveTeamSavedRepliesCommand}
+export { canHandleUpdateTeamSavedRepliesCommand }

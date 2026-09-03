@@ -404,3 +404,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Locally built extension packages
+team-saved-replies-*.zip
+dist/

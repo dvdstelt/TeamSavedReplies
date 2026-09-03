@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/modernist-7c6a2a80-7b63-4f2a-b81a-e1c40b6c1c8e/styles.css">
+<script src="_ds/modernist-7c6a2a80-7b63-4f2a-b81a-e1c40b6c1c8e/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  body { margin: 0; background: #dcdada; }
+  a { color: #ae1800; text-decoration: none; }
+  a:hover { color: #ec3013; text-decoration: underline; }
+  *, *::before, *::after { box-sizing: border-box; }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:56px 56px 40px; font-family:'Archivo', system-ui, sans-serif; color:#201e1d;">
+  <div style="display:flex; flex-direction:column; gap:10px; border-bottom:2px solid #201e1d; padding-bottom:16px;">
+    <div style="font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#7d7979;">Turn 2 · Options page</div>
+    <div style="font-size:34px; font-weight:800; letter-spacing:-0.02em; line-height:1.05;">Settings, rebuilt around sources</div>
+    <div style="font-size:14px; line-height:1.5; max-width:760px; color:#444141;">The dialog becomes a full options page: a short global strip, then one panel per source carrying its name, its markdown URL, the organization it applies to, and its issue / pull-request switches. Themes are gone. Everything below is live — add a source, add an organization, flip a switch.</div>
+  </div>
+
+  <div id="2a" style="display:flex; flex-direction:column; gap:20px;">
+    <div style="display:flex; align-items:baseline; gap:12px; border-bottom:2px solid #ec3013; padding-bottom:8px;">
+      <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:12px; font-weight:500; background:#ec3013; color:#fff; padding:3px 7px;">2a</span>
+      <span style="font-size:18px; font-weight:700;">Options page</span>
+      <span style="font-size:12px; color:#7d7979;">opens in a tab · 860 wide</span>
+    </div>
+
+    <div style="width:860px; background:#f3f2f2; box-shadow:0 3px 10px rgba(45,43,43,0.16); display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:flex-end; justify-content:space-between; padding:22px 28px 16px; border-bottom:2px solid #201e1d;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#7d7979;">Team saved replies</div>
+          <div style="font-size:26px; font-weight:800; letter-spacing:-0.02em; line-height:1;">Settings</div>
+        </div>
+        <div style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; font-size:10px; color:#605d5d;">v1.4.0</div>
+      </div>
+
+      <div style="padding:22px 28px 24px; border-bottom:2px solid #201e1d;">
+        <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:14px;">Global</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="font-size:12px; font-weight:600;">Refresh rate in minutes</label>
+            <input type="number" min="1" max="1440" value="{{ refresh }}" onInput="{{ onRefresh }}" style="width:110px; height:34px; border:1px solid #201e1d; border-radius:0; background:#fff; font-family:'IBM Plex Mono', monospace; font-size:13px; color:#201e1d; padding:0 10px; outline:none;">
+            <span style="font-size:11px; color:#605d5d; line-height:1.5;">How often every source is re-fetched and cached. A refresh takes a few hundred milliseconds.</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="font-size:12px; font-weight:600;">Show edge tab on GitHub</label>
+            <div style="display:flex; border:1px solid #201e1d; width:fit-content;">
+              <div onClick="{{ edgeYes }}" style="padding:0 16px; height:34px; display:flex; align-items:center; font-size:12px; font-weight:700; letter-spacing:0.04em; cursor:pointer; border-right:1px solid #201e1d; background:{{ edgeOnBg }}; color:{{ edgeOnFg }};">On</div>
+              <div onClick="{{ edgeNo }}" style="padding:0 16px; height:34px; display:flex; align-items:center; font-size:12px; font-weight:700; letter-spacing:0.04em; cursor:pointer; background:{{ edgeOffBg }}; color:{{ edgeOffFg }};">Off</div>
+            </div>
+            <span style="font-size:11px; color:#605d5d; line-height:1.5;">Off still leaves the replies in GitHub's own saved-replies dialog and in the extension popup.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:22px 28px 8px; display:flex; align-items:baseline; justify-content:space-between;">
+        <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase;">Sources</div>
+        <div style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:10px; color:#605d5d;">{{ sourceCount }}</div>
+      </div>
+
+      <div style="display:flex; flex-direction:column;">
+        <sc-for list="{{ sources }}" as="s" hint-placeholder-count="2">
+          <div style="margin:0 28px 18px; border-top:2px solid #201e1d; background:#eae9e9;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid #d7d3d3;">
+              <div style="display:flex; align-items:baseline; gap:10px;">
+                <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:11px; color:#605d5d;">{{ s.index }}</span>
+                <span style="font-size:14px; font-weight:700;">{{ s.nameShown }}</span>
+              </div>
+              <div onClick="{{ s.remove }}" style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#ae1800; cursor:pointer; padding:4px 6px;" style-hover="background:#ffe0d9">Remove</div>
+            </div>
+
+            <div style="padding:16px; display:flex; flex-direction:column; gap:18px;">
+              <div style="display:grid; grid-template-columns:220px 1fr; gap:16px;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:600;">Name</label>
+                  <input type="text" value="{{ s.name }}" onInput="{{ s.onName }}" placeholder="Particular" style="height:34px; border:1px solid #201e1d; border-radius:0; background:#fff; font-family:'Archivo', system-ui, sans-serif; font-size:13px; color:#201e1d; padding:0 10px; outline:none;">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:600;">Templates URL</label>
+                  <input type="text" value="{{ s.url }}" onInput="{{ s.onUrl }}" placeholder="https://github.com/Particular/docs/blob/main/saved-replies.md" style="height:34px; border:1px solid #201e1d; border-radius:0; background:#fff; font-family:'IBM Plex Mono', monospace; font-size:12px; color:#201e1d; padding:0 10px; outline:none;">
+                  <span style="font-size:11px; color:#605d5d; line-height:1.5;">The GitHub page for the .md file, not the raw URL. Private repos work if you can read them.</span>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid #d7d3d3; padding-top:16px;">
+                <label style="font-size:12px; font-weight:600;">Where this source applies</label>
+                <div style="display:flex; border:1px solid #201e1d; width:fit-content;">
+                  <div onClick="{{ s.setAll }}" style="padding:0 14px; height:32px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer; border-right:1px solid #201e1d; background:{{ s.allBg }}; color:{{ s.allFg }};">All of GitHub</div>
+                  <div onClick="{{ s.setOrgs }}" style="padding:0 14px; height:32px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer; background:{{ s.orgsBg }}; color:{{ s.orgsFg }};">One organization or user</div>
+                </div>
+                <sc-if value="{{ s.scopeOrgs }}">
+                  <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+                    <div style="display:flex; align-items:center; width:fit-content; border:1px solid #201e1d; background:#fff; height:32px;">
+                      <span style="font-family:'IBM Plex Mono', monospace; font-size:12px; color:#7d7979; padding:0 0 0 10px;">https://github.com/</span>
+                      <input type="text" value="{{ s.owner }}" onInput="{{ s.onOwner }}" placeholder="[organization]" style="width:190px; height:32px; border:none; border-radius:0; background:transparent; font-family:'IBM Plex Mono', monospace; font-size:12px; color:#201e1d; padding:0 2px; outline:none;">
+                      <span style="font-family:'IBM Plex Mono', monospace; font-size:12px; color:#7d7979; padding:0 10px 0 0;">/</span>
+                    </div>
+                    <sc-if value="{{ s.ownerMissing }}">
+                      <div style="font-size:11px; color:#ae1800; line-height:1.5;">Without an organization or user this source will not show anywhere.</div>
+                    </sc-if>
+                    <span style="font-size:11px; color:#605d5d; line-height:1.5;">Paste the full organization or user URL and the prefix is stripped for you.</span>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; border-top:1px solid #d7d3d3; padding-top:16px;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:600;">Applies to issues</label>
+                  <div style="display:flex; border:1px solid #201e1d; width:fit-content;">
+                    <div onClick="{{ s.issuesYes }}" style="padding:0 14px; height:32px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer; border-right:1px solid #201e1d; background:{{ s.issuesOnBg }}; color:{{ s.issuesOnFg }};">On</div>
+                    <div onClick="{{ s.issuesNo }}" style="padding:0 14px; height:32px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer; background:{{ s.issuesOffBg }}; color:{{ s.issuesOffFg }};">Off</div>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:600;">Applies to pull requests</label>
+                  <div style="display:flex; border:1px solid #201e1d; width:fit-content;">
+                    <div onClick="{{ s.prsYes }}" style="padding:0 14px; height:32px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer; border-right:1px solid #201e1d; background:{{ s.prsOnBg }}; color:{{ s.prsOnFg }};">On</div>
+                    <div onClick="{{ s.prsNo }}" style="padding:0 14px; height:32px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer; background:{{ s.prsOffBg }}; color:{{ s.prsOffFg }};">Off</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="padding:0 28px 24px;">
+        <div onClick="{{ addSource }}" style="display:flex; align-items:center; gap:10px; height:38px; padding:0 14px; border:2px solid #201e1d; width:fit-content; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" style-hover="background:#201e1d; color:#fff">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="{{ ic.plus }}"></path></svg>
+          <span>Add source</span>
+        </div>
+      </div>
+
+      <div style="border-top:2px solid #201e1d; padding:16px 28px; display:flex; align-items:center; gap:12px;">
+        <div style="display:flex; align-items:center; height:38px; padding:0 18px; background:#ec3013; color:#fff; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" style-hover="background:#dd2b0f">Save</div>
+        <div style="display:flex; align-items:center; height:38px; padding:0 18px; border:1px solid #201e1d; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" style-hover="background:#ffe0d9">Cancel</div>
+        <div style="margin-left:auto; font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:10px; color:#605d5d;">Last sync 4 min ago</div>
+      </div>
+    </div>
+
+    <div style="width:860px; display:flex; flex-wrap:wrap; gap:32px;">
+      <div style="flex:1 1 240px; border-left:2px solid #ec3013; padding:6px 0 6px 12px;">
+        <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#ae1800; margin-bottom:6px;">One switch, not two fields</div>
+        <div style="font-size:12px; line-height:1.6; color:#444141;">The old toggle plus disabled-until-off text box becomes a single two-way choice, and the owner field carries the <code style="font-family:'IBM Plex Mono',monospace; font-size:11px;">github.com/</code> prefix so there is nothing to get wrong.</div>
+      </div>
+      <div style="flex:1 1 240px; border-left:2px solid #ec3013; padding:6px 0 6px 12px;">
+        <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#ae1800; margin-bottom:6px;">Per source, not per default</div>
+        <div style="font-size:12px; line-height:1.6; color:#444141;">Issues and pull requests are decided on the source itself, so there is no “defaults” screen shadowing a second set of the same switches.</div>
+      </div>
+      <div style="flex:1 1 240px; border-left:2px solid #ec3013; padding:6px 0 6px 12px;">
+        <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#ae1800; margin-bottom:6px;">Two things are global</div>
+        <div style="font-size:12px; line-height:1.6; color:#444141;">Refresh rate and the edge tab. Those sit in one strip at the top; the theme picker is gone.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:16px 56px 96px; font-family:'Archivo', system-ui, sans-serif; color:#201e1d;">
+  <div style="display:flex; flex-direction:column; gap:10px; border-bottom:2px solid #201e1d; padding-bottom:16px;">
+    <div style="font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#7d7979;">Turn 1 · Team Saved Replies</div>
+    <div style="font-size:34px; font-weight:800; letter-spacing:-0.02em; line-height:1.05;">The current extension, recreated — and a redesign beside it</div>
+    <div style="font-size:14px; line-height:1.5; max-width:760px; color:#444141;"><a href="#1a">1a</a> is the UI as it exists in the repo today, rebuilt from popup.css, saved-replies-sidepanel.css and sidepanel-button.css. <a href="#1b">1b</a> is the proposal: the popup becomes a template list you copy from, sources move to settings, the edge tab gets a real design, themes are gone.</div>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:56px; align-items:flex-start;">
+
+    <div id="1a" style="display:flex; flex-direction:column; gap:20px;">
+      <div style="display:flex; align-items:baseline; gap:12px; border-bottom:2px solid #201e1d; padding-bottom:8px;">
+        <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:12px; font-weight:500; background:#201e1d; color:#f3f2f2; padding:3px 7px;">1a</span>
+        <span style="font-size:18px; font-weight:700;">Current</span>
+        <span style="font-size:12px; color:#7d7979;">recreated from source</span>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:32px; align-items:flex-start;">
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#7d7979;">Popup — 375 × 600</div>
+          <div style="width:375px; height:600px; display:flex; flex-direction:column; background:radial-gradient(100% 100% at 91.87% 0%, rgb(251,235,235) 3.29%, rgb(249,250,251) 9.64%, rgb(249,250,251) 100%); font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-shadow:0 3px 10px rgba(45,43,43,0.16);">
+            <div style="display:flex; align-items:flex-start; justify-content:center; padding:12px; gap:16px; border-bottom:0.5px solid rgb(215,219,224); background:#00a3c4;">
+              <div style="position:relative; display:flex; align-items:center;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="position:absolute; left:14px; top:10px;"><path d="{{ ic.search }}" fill="#40526D"></path></svg>
+                <div style="border-radius:4px; border:1px solid rgb(186,192,202); background:#fff; color:rgb(27,40,60); font-size:16px; line-height:24px; height:36px; padding-left:44px; width:250px; display:flex; align-items:center;"></div>
+              </div>
+              <div style="display:flex; align-items:center; height:36px;">
+                <div style="border-radius:4px; padding:8px; display:flex; align-items:center; justify-content:center; cursor:pointer;" style-hover="background-color:rgba(27,40,60,0.1)">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="{{ ic.plus }}" fill="#ffffff"></path></svg>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; overflow:auto; flex:1 1 0px; background:#F2F4F5;">
+              <sc-for list="{{ configs }}" as="cfg" hint-placeholder-count="3">
+                <div style="border-bottom:1px solid lightgrey;">
+                  <div style="display:flex; align-items:center; height:64px; border-radius:4px; background:#ffffff;">
+                    <div style="display:flex; align-items:center; flex-grow:2; overflow:hidden; cursor:pointer;">
+                      <div style="margin:12px; width:40px; height:40px;">
+                        <div style="display:flex; align-items:center; justify-content:center; overflow:hidden; width:40px; height:40px; border:1px solid rgb(213,217,222); border-radius:4px; background:#fff; font-size:16px; font-weight:700; color:#40526D;">{{ cfg.initial }}</div>
+                      </div>
+                      <div style="flex-grow:2; flex-basis:auto; overflow:hidden; line-height:24px;">
+                        <div style="white-space:nowrap; color:rgba(64,82,109,0.7); font-size:14px; line-height:24px; overflow:hidden; height:24px; text-overflow:ellipsis;">{{ cfg.name }}</div>
+                        <div style="text-overflow:ellipsis; white-space:nowrap; overflow:hidden; color:rgb(27,40,60); font-size:16px; line-height:24px;">{{ cfg.url }}</div>
+                      </div>
+                    </div>
+                    <div style="display:flex; align-items:center; margin-right:16px; line-height:0px; gap:0px;">
+                      <div style="display:flex; align-items:center; justify-content:center; border-radius:4px; padding:8px; cursor:pointer;" style-hover="background:rgba(27,40,60,0.1)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="{{ ic.pencil }}" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14.5 6.5L17.5 9.5" stroke="#000" stroke-width="2"></path></svg>
+                      </div>
+                      <div style="display:flex; align-items:center; justify-content:center; border-radius:4px; padding:8px; cursor:pointer;" style-hover="background:rgba(27,40,60,0.1)">
+                        <svg width="20" height="20" viewBox="0 0 56 56" fill="#000"><path d="{{ ic.trash }}"></path></svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="height:50px; display:flex; align-items:center; justify-content:flex-end; background:#F2F4F5; padding-right:8px;">
+              <div style="padding:10px; border:0.5px solid lightgray; border-radius:5px; display:flex; cursor:pointer;" style-hover="background-color:rgba(27,40,60,0.1)">
+                <svg width="25" height="25" viewBox="0 0 70 70" fill="#000"><path d="{{ ic.gearA }}"></path><path d="{{ ic.gearB }}"></path></svg>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:12px; line-height:1.5; width:375px; color:#605d5d;">Lists configured <em>sources</em>, not templates. Search is decorative here; the plus opens the add-source dialog.</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#7d7979;">Side panel — 360 wide</div>
+          <div style="width:360px; height:600px; display:flex; flex-direction:column; background:#F2F4F5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-shadow:0 3px 10px rgba(45,43,43,0.16); overflow:hidden;">
+            <div style="display:flex; align-items:flex-start; justify-content:center; padding:12px; gap:16px; border-bottom:0.5px solid rgb(215,219,224); background:#00a3c4;">
+              <div style="position:relative; display:flex; align-items:flex-start;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="position:absolute; left:14px; top:10px;"><path d="{{ ic.search }}" fill="#40526D"></path></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="position:absolute; right:14px; top:10px;"><path d="M5 5L19 19M5 19L19 5" stroke="#40526D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <div style="border-radius:4px; border:1px solid rgb(186,192,202); background:#fff; font-size:16px; line-height:24px; height:36px; padding-left:44px; width:250px; display:flex; align-items:center; color:rgba(0,0,0,0.3);">template name</div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; overflow:auto; flex:1 1 0px; background:#F2F4F5;">
+              <sc-for list="{{ oldPanelRows }}" as="t" hint-placeholder-count="6">
+                <div style="border-bottom:1px solid lightgrey; position:relative;">
+                  <div style="display:flex; align-items:center; height:64px; border-radius:1px; background:#ffffff;">
+                    <div style="display:flex; align-items:center; flex-grow:2; overflow:hidden;">
+                      <div style="margin:12px; width:40px; height:40px;">
+                        <div style="display:flex; align-items:center; justify-content:center; overflow:hidden; width:40px; height:40px; border-radius:4px;">
+                          <div style="display:flex; align-items:center; justify-content:center; border-radius:4px; padding:8px; cursor:pointer;" style-hover="background:rgba(27,40,60,0.1)">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="#000"><path d="{{ ic.copy }}"></path></svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div style="flex-grow:2; overflow:hidden; line-height:24px;">
+                        <div style="white-space:nowrap; color:rgba(64,82,109,0.7); font-size:21px; line-height:21px; overflow:hidden; height:24px; text-overflow:ellipsis;">{{ t.name }}</div>
+                      </div>
+                    </div>
+                    <div style="display:flex; align-items:center; margin-right:16px; line-height:0px;">
+                      <div style="display:flex; align-items:center; justify-content:center; border-radius:4px; padding:8px; cursor:pointer;" style-hover="background:rgba(27,40,60,0.1)">
+                        <svg width="16" height="16" viewBox="0 0 330 330" fill="#000"><path d="{{ ic.chevron }}"></path></svg>
+                      </div>
+                    </div>
+                  </div>
+                  <sc-if value="{{ t.open }}">
+                    <div style="background:#F2F4F5; overflow:auto; margin:10px 5px 10px; padding:10px;">
+                      <pre style="margin:0; font-size:11px; line-height:1.5; font-family:Consolas, Monaco, monospace; white-space:pre-wrap; color:#393A34;">{{ t.body }}</pre>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="font-size:12px; line-height:1.5; width:360px; color:#605d5d;">One flat list, 64px rows, 21px muted grey titles. Copy sits in the 40px icon slot; the chevron reveals the Prism-highlighted body. No grouping, no recency, no source attribution.</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#7d7979;">Edge tab — on GitHub</div>
+          <div style="width:260px; height:600px; position:relative; background:#0d1117; border:1px solid #30363d; overflow:hidden; box-shadow:0 3px 10px rgba(45,43,43,0.16);">
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; gap:10px; padding:20px;">
+              <div style="height:10px; width:60%; background:#21262d;"></div>
+              <div style="height:10px; width:80%; background:#21262d;"></div>
+              <div style="height:10px; width:45%; background:#21262d;"></div>
+              <div style="height:120px; width:100%; background:#161b22; border:1px solid #30363d;"></div>
+              <div style="height:10px; width:70%; background:#21262d;"></div>
+            </div>
+            <div style="position:absolute; right:0; top:50%; transform:translateY(50%);">
+              <div style="background:lightgray; border-radius:25% 0% 0% 25%; height:36px; width:36px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                <img src="assets/saved-replies-icon.svg" alt="Saved replies" style="height:24px; width:24px;">
+              </div>
+            </div>
+          </div>
+          <div style="font-size:12px; line-height:1.5; width:260px; color:#605d5d;">36 × 36, light grey, half-rounded on the left, pinned at <code style="font-family:'IBM Plex Mono',monospace; font-size:11px;">bottom: 50vh</code>. Reads as browser furniture rather than part of GitHub, and gives no clue what it does.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex; flex-direction:column; gap:20px;">
+      <div style="display:flex; align-items:baseline; gap:12px; border-bottom:2px solid #ec3013; padding-bottom:8px;">
+        <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:12px; font-weight:500; background:#ec3013; color:#fff; padding:3px 7px;">1b</span>
+        <span style="font-size:18px; font-weight:700;">Redesign</span>
+        <span style="font-size:12px; color:#7d7979;">templates in the popup · recency in the panel · a labelled edge tab</span>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:32px; align-items:flex-start;">
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#7d7979;">Popup — 375 × 600 · quick copy</div>
+          <div style="width:375px; height:600px; display:flex; flex-direction:column; background:#f3f2f2; font-family:'Archivo', system-ui, sans-serif; color:#201e1d; box-shadow:0 3px 10px rgba(45,43,43,0.16);">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px 12px; border-bottom:2px solid #201e1d; background:#f3f2f2;">
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <div style="font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; line-height:1;">Saved replies</div>
+                <div style="font-size:11px; color:#605d5d; letter-spacing:0.02em;">{{ countLabel }}</div>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; cursor:pointer; border:1px solid transparent;" style-hover="background:#ffe0d9; border-color:#ec3013">
+                <svg width="18" height="18" viewBox="0 0 70 70" fill="#201e1d"><path d="{{ ic.gearA }}"></path><path d="{{ ic.gearB }}"></path></svg>
+              </div>
+            </div>
+            <div style="padding:12px 16px; background:#f3f2f2; border-bottom:1px solid #d7d3d3;">
+              <div style="position:relative; display:flex; align-items:center;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="position:absolute; left:11px;"><path d="{{ ic.search }}" fill="#7d7979"></path></svg>
+                <input type="text" value="{{ query }}" onInput="{{ onQuery }}" placeholder="Filter templates" style="width:100%; height:34px; border:1px solid #201e1d; border-radius:0; background:#fff; font-family:'Archivo', system-ui, sans-serif; font-size:13px; color:#201e1d; padding:0 12px 0 32px; outline:none;">
+              </div>
+            </div>
+            <div style="flex:1 1 0px; overflow:auto; background:#f3f2f2;">
+              <sc-if value="{{ popupFlat }}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{ popupItems }}" as="t" hint-placeholder-count="8">
+                  <div onClick="{{ t.copy }}" title="Click to copy to clipboard" style="display:flex; align-items:center; gap:10px; padding:0 16px; height:44px; border-bottom:1px solid #d7d3d3; background:#f3f2f2; cursor:pointer;" style-hover="background:#fff; box-shadow:inset 3px 0 0 #ec3013">
+                    <span style="flex:1 1 auto; min-width:0; font-size:14px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ t.name }}</span>
+                    <sc-if value="{{ t.copied }}">
+                      <span style="flex:0 0 auto; font-size:10px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:#ec3013;">Copied</span>
+                    </sc-if>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#9b9797" style="flex:0 0 auto;"><path d="{{ ic.copy }}"></path></svg>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{ popupGrouped }}">
+                <sc-for list="{{ popupGroups }}" as="g" hint-placeholder-count="2">
+                  <div>
+                    <div onClick="{{ g.toggle }}" style="display:flex; align-items:center; gap:8px; padding:9px 16px 8px; border-bottom:2px solid #201e1d; background:#eae9e9; cursor:pointer;" style-hover="background:#e0dede">
+                      <svg width="9" height="9" viewBox="0 0 330 330" fill="#201e1d" style="flex:0 0 auto; transform:{{ g.chevronRotate }};"><path d="{{ ic.chevron }}"></path></svg>
+                      <span style="flex:1 1 auto; font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:10px; font-weight:500; letter-spacing:0.04em;">{{ g.source }}</span>
+                      <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:9px; color:#605d5d;">{{ g.count }}</span>
+                    </div>
+                    <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="5">
+                      <div onClick="{{ t.copy }}" title="Click to copy to clipboard" style="display:flex; align-items:center; gap:10px; padding:0 16px; height:44px; border-bottom:1px solid #d7d3d3; background:#f3f2f2; cursor:pointer;" style-hover="background:#fff; box-shadow:inset 3px 0 0 #ec3013">
+                        <span style="flex:1 1 auto; min-width:0; font-size:14px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ t.name }}</span>
+                        <sc-if value="{{ t.copied }}">
+                          <span style="flex:0 0 auto; font-size:10px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:#ec3013;">Copied</span>
+                        </sc-if>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#9b9797" style="flex:0 0 auto;"><path d="{{ ic.copy }}"></path></svg>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{ noResults }}">
+                <div style="padding:40px 16px; display:flex; flex-direction:column; gap:8px;">
+                  <div style="font-size:14px; font-weight:700;">Nothing matches “{{ query }}”</div>
+                  <div style="font-size:12px; color:#605d5d; line-height:1.5;">Filtering runs over template names and bodies.</div>
+                </div>
+              </sc-if>
+            </div>
+            <div style="border-top:2px solid #201e1d; padding:10px 16px; display:flex; align-items:center; background:#f3f2f2;">
+              <div style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:10px; color:#605d5d;">Synced 4 min ago</div>
+            </div>
+          </div>
+          <div style="font-size:12px; line-height:1.6; width:375px; color:#444141;">Templates, not sources. One row, one name, 44px — clicking anywhere on it copies, and the row answers with <strong>Copied</strong>. No badges, no buttons, no markdown preview: the repo name sits once in the header, and reading a template is the side panel's job. The gear in the header is the only route to configuration.</div>
+          <div style="width:375px; border-left:2px solid #ec3013; padding:8px 0 8px 10px; font-size:12px; line-height:1.6; color:#444141;"><strong>Every source gets a header rule, and every header collapses.</strong> With one repo that is a single line naming it; with several, each group folds away so you can keep only the one you're working in open — clicking a header toggles it. Because a source can be scoped to one organization, the popup only shows what is in scope for the tab you're on, so the same install can show one group on one org and two on another. Toggle <em>Second repo configured</em> in Tweaks.</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#7d7979;">Side panel — 360 wide · browse &amp; read</div>
+          <div style="width:360px; height:600px; display:flex; flex-direction:column; background:#f3f2f2; font-family:'Archivo', system-ui, sans-serif; color:#201e1d; box-shadow:0 3px 10px rgba(45,43,43,0.16);">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px 12px; border-bottom:2px solid #201e1d;">
+              <div style="font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase;">Saved replies</div>
+              <div style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; cursor:pointer; border:1px solid transparent;" style-hover="background:#ffe0d9; border-color:#ec3013">
+                <svg width="18" height="18" viewBox="0 0 70 70" fill="#201e1d"><path d="{{ ic.gearA }}"></path><path d="{{ ic.gearB }}"></path></svg>
+              </div>
+            </div>
+            <div style="padding:12px 16px; border-bottom:1px solid #d7d3d3;">
+              <div style="position:relative; display:flex; align-items:center;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="position:absolute; left:11px;"><path d="{{ ic.search }}" fill="#7d7979"></path></svg>
+                <input type="text" value="{{ pQuery }}" onInput="{{ onPQuery }}" placeholder="Filter name or body" style="width:100%; height:34px; border:1px solid #201e1d; border-radius:0; background:#fff; font-family:'Archivo', system-ui, sans-serif; font-size:13px; color:#201e1d; padding:0 12px 0 32px; outline:none;">
+              </div>
+            </div>
+            <div style="flex:1 1 0px; overflow:auto;">
+              <sc-if value="{{ showRecent }}">
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px 8px; border-bottom:2px solid #201e1d; background:#eae9e9;">
+                    <span style="font-size:10px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase;">Recently used</span>
+                    <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:9px; color:#605d5d;">automatic</span>
+                  </div>
+                  <sc-for list="{{ recent }}" as="t" hint-placeholder-count="3">
+                    <div onClick="{{ t.copy }}" title="Click to copy to clipboard" style="border-bottom:1px solid #d7d3d3; background:#f3f2f2; cursor:pointer;" style-hover="background:#fff; box-shadow:inset 3px 0 0 #ec3013">
+                      <div style="display:flex; align-items:center; gap:10px; padding:0 16px; height:44px;">
+                        <div style="flex:1 1 auto; min-width:0; display:flex; align-items:baseline; gap:8px;">
+                          <span style="font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ t.name }}</span>
+                          <sc-if value="{{ t.showBadge }}">
+                            <span style="flex:0 0 auto; font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:9px; letter-spacing:0.06em; text-transform:uppercase; color:#ae1800; border:1px solid #ec3013; background:rgba(236,48,19,0.1); padding:1px 5px; white-space:nowrap;">{{ t.badge }}</span>
+                          </sc-if>
+                        </div>
+                        <sc-if value="{{ t.copied }}">
+                          <span style="flex:0 0 auto; font-size:10px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:#ec3013;">Copied</span>
+                        </sc-if>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#9b9797" style="flex:0 0 auto;"><path d="{{ ic.copy }}"></path></svg>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px 8px; border-bottom:2px solid #201e1d; background:#eae9e9;">
+                    <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:10px; font-weight:500; letter-spacing:0.04em;">{{ g.source }}</span>
+                    <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:9px; color:#605d5d;">{{ g.count }}</span>
+                  </div>
+                  <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="5">
+                    <div onClick="{{ t.copy }}" title="Click to copy to clipboard" style="border-bottom:1px solid #d7d3d3; background:#f3f2f2; cursor:pointer;" style-hover="background:#fff; box-shadow:inset 3px 0 0 #ec3013">
+                      <div style="display:flex; align-items:center; gap:10px; padding:0 16px; height:44px;">
+                        <div style="flex:1 1 auto; min-width:0; display:flex; align-items:center;">
+                          <span style="font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ t.name }}</span>
+                        </div>
+                        <sc-if value="{{ t.copied }}">
+                          <span style="flex:0 0 auto; font-size:10px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:#ec3013;">Copied</span>
+                        </sc-if>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#9b9797" style="flex:0 0 auto;"><path d="{{ ic.copy }}"></path></svg>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="font-size:12px; line-height:1.6; width:360px; color:#444141;">Built for scanning: rows drop to 44px, titles go to ink at 14/700, and the repo becomes a section rule instead of a per-row badge. <strong>Recently used</strong> keeps itself — the last three you copied float to the top, no starring; since recency crosses repos, those rows carry a red repo tag, but only when a second repo is actually configured (toggle it in Tweaks). Search matches bodies too. Rows behave exactly like the popup: the whole row is the target, a muted clipboard glyph on the right says so, and the row answers with <strong>Copied</strong>.</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#7d7979;">Edge tab — hover to expand</div>
+          <div style="width:260px; height:600px; position:relative; background:#0d1117; border:1px solid #30363d; overflow:hidden; box-shadow:0 3px 10px rgba(45,43,43,0.16);">
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; gap:10px; padding:20px;">
+              <div style="height:10px; width:60%; background:#21262d;"></div>
+              <div style="height:10px; width:80%; background:#21262d;"></div>
+              <div style="height:10px; width:45%; background:#21262d;"></div>
+              <div style="height:120px; width:100%; background:#161b22; border:1px solid #30363d;"></div>
+              <div style="height:10px; width:70%; background:#21262d;"></div>
+            </div>
+            <div onMouseEnter="{{ onTabIn }}" onMouseLeave="{{ onTabOut }}" style="position:absolute; right:0; top:44%; display:flex; justify-content:flex-end; cursor:pointer;">
+              <sc-if value="{{ tabCollapsed }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; align-items:center; justify-content:center; width:26px; height:76px; background:#201e1d; border-left:2px solid #ec3013;">
+                  <img src="assets/saved-replies-icon.svg" alt="Saved replies" style="width:16px; height:16px; filter:invert(1);">
+                </div>
+              </sc-if>
+              <sc-if value="{{ tabOpen }}">
+                <div style="display:flex; align-items:center; gap:9px; height:76px; padding:0 12px 0 10px; background:#201e1d; border-left:2px solid #ec3013;">
+                  <img src="assets/saved-replies-icon.svg" alt="" style="width:16px; height:16px; filter:invert(1);">
+                  <div style="display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-family:'Archivo', system-ui, sans-serif; font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#fff; white-space:nowrap;">{{ edgeLabel }}</span>
+                    <span style="font-family:'Archivo', system-ui, sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; font-size:9px; color:#bab6b6; white-space:nowrap;">{{ countLabel }} · ctrl .</span>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="font-size:12px; line-height:1.6; width:260px; color:#444141;">A 26 × 76 ink tab with a 2px accent edge — square, flush to the viewport, and clearly attached to the page rather than floating over it. Hover widens it into icon + label + shortcut, so it stops being a mystery arrow. It still remembers the vertical position you drag it to.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top:2px solid #201e1d; padding-top:20px; display:flex; flex-wrap:wrap; gap:40px; max-width:1180px;">
+    <div style="flex:1 1 280px; display:flex; flex-direction:column; gap:8px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#ae1800;">Also proposed</div>
+      <div style="font-size:13px; line-height:1.6; color:#444141;">Themes are gone. One appearance, following the ink-on-ground palette; a later dark variant can key off <code style="font-family:'IBM Plex Mono',monospace; font-size:12px;">prefers-color-scheme</code> rather than seven named palettes.</div>
+    </div>
+    <div style="flex:1 1 280px; display:flex; flex-direction:column; gap:8px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#ae1800;">Worth deciding</div>
+      <div style="font-size:13px; line-height:1.6; color:#444141;">Whether the panel can write into GitHub's comment box. If it can, a row click could insert instead of copy — one behaviour either way, never two buttons per row.</div>
+    </div>
+    <div style="flex:1 1 280px; display:flex; flex-direction:column; gap:8px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#ae1800;">Not touched</div>
+      <div style="font-size:13px; line-height:1.6; color:#444141;">The replies injected into GitHub's own saved-replies dialog stay exactly as they are, per your note.</div>
+    </div>
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;secondRepoConfigured&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Repos&quot;},&quot;showRecentSection&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Side panel&quot;},&quot;edgeTabLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Saved replies&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Edge tab&quot;}}">
+const IC = {
+  search: "M15.6092 13.7282L12.5125 10.6315C13.4554 9.22007 13.8396 7.50839 13.5903 5.82939C13.341 4.1504 12.4762 2.62414 11.1639 1.54751C9.85167 0.470872 8.18586 -0.0791649 6.49052 0.00438852C4.79518 0.087942 3.19153 0.799111 1.99151 1.99956C0.791479 3.20002 0.0808763 4.80392 -0.00207777 6.49928C-0.0850318 8.19465 0.465594 9.86026 1.54269 11.1721C2.61979 12.484 4.14635 13.3483 5.82544 13.597C7.50452 13.8457 9.21607 13.4609 10.6272 12.5175L13.7238 15.6135C13.976 15.8595 14.3143 15.9971 14.6665 15.9971C15.0187 15.9971 15.357 15.8595 15.6092 15.6135C15.8591 15.3635 15.9995 15.0244 15.9995 14.6708C15.9995 14.3173 15.8591 13.9782 15.6092 13.7282ZM6.83316 2.00416C7.7891 2.00416 8.72358 2.28763 9.51842 2.81873C10.3133 3.34982 10.9328 4.10468 11.2986 4.98786C11.6644 5.87104 11.7601 6.84286 11.5736 7.78043C11.3871 8.71801 10.9268 9.57922 10.2508 10.2552C9.57489 10.9311 8.71367 11.3915 7.7761 11.578C6.83852 11.7645 5.8667 11.6687 4.98352 11.3029C4.10035 10.9371 3.34548 10.3176 2.81439 9.52275C2.2833 8.72791 1.99983 7.79344 1.99983 6.8375C2.00124 5.55605 2.51091 4.32749 3.41703 3.42137C4.32315 2.51525 5.55171 2.00557 6.83316 2.00416Z",
+  plus: "M0 10C0 10.3315 0.131696 10.6495 0.366116 10.8839C0.600537 11.1183 0.918479 11.25 1.25 11.25H8.54167C8.59692 11.25 8.64991 11.2719 8.68898 11.311C8.72805 11.3501 8.75 11.4031 8.75 11.4583V18.75C8.75 19.0815 8.8817 19.3995 9.11612 19.6339C9.35054 19.8683 9.66848 20 10 20C10.3315 20 10.6495 19.8683 10.8839 19.6339C11.1183 19.3995 11.25 19.0815 11.25 18.75V11.4583C11.25 11.4031 11.2719 11.3501 11.311 11.311C11.3501 11.2719 11.4031 11.25 11.4583 11.25H18.75C19.0815 11.25 19.3995 11.1183 19.6339 10.8839C19.8683 10.6495 20 10.3315 20 10C20 9.66848 19.8683 9.35054 19.6339 9.11612C19.3995 8.8817 19.0815 8.75 18.75 8.75H11.4583C11.4031 8.75 11.3501 8.72805 11.311 8.68898C11.2719 8.64991 11.25 8.59692 11.25 8.54167V1.25C11.25 0.918479 11.1183 0.600537 10.8839 0.366116C10.6495 0.131696 10.3315 0 10 0C9.66848 0 9.35054 0.131696 9.11612 0.366116C8.8817 0.600537 8.75 0.918479 8.75 1.25V8.54167C8.75 8.59692 8.72805 8.64991 8.68898 8.68898C8.64991 8.72805 8.59692 8.75 8.54167 8.75H1.25C0.918479 8.75 0.600537 8.8817 0.366116 9.11612C0.131696 9.35054 0 9.66848 0 10H0Z",
+  copy: "M 4 2 C 2.895 2 2 2.895 2 4 L 2 17 C 2 17.552 2.448 18 3 18 C 3.552 18 4 17.552 4 17 L 4 4 L 17 4 C 17.552 4 18 3.552 18 3 C 18 2.448 17.552 2 17 2 L 4 2 z M 8 6 C 6.895 6 6 6.895 6 8 L 6 20 C 6 21.105 6.895 22 8 22 L 20 22 C 21.105 22 22 21.105 22 20 L 22 8 C 22 6.895 21.105 6 20 6 L 8 6 z M 8 8 L 20 8 L 20 20 L 8 20 L 8 8 z",
+  chevron: "M325.607,79.393c-5.857-5.857-15.355-5.858-21.213,0.001l-139.39,139.393L25.607,79.393c-5.857-5.857-15.355-5.858-21.213,0.001c-5.858,5.858-5.858,15.355,0,21.213l150.004,150c2.813,2.813,6.628,4.393,10.606,4.393s7.794-1.581,10.606-4.394l149.996-150C331.465,94.749,331.465,85.251,325.607,79.393z",
+  pencil: "M4.33295 16.048L16.5714 3.80952C17.5708 2.81015 19.1911 2.81015 20.1905 3.80952C21.1898 4.8089 21.1898 6.4292 20.1905 7.42857L7.952 19.667C7.6728 19.9462 7.3172 20.1366 6.93002 20.214L3 21L3.786 17.07C3.86344 16.6828 4.05375 16.3272 4.33295 16.048Z",
+  trash: "M 44.5235 48.6602 L 46.1407 14.3945 L 48.4844 14.3945 C 49.4454 14.3945 50.2187 13.5976 50.2187 12.6367 C 50.2187 11.6758 49.4454 10.8555 48.4844 10.8555 L 38.2422 10.8555 L 38.2422 7.3398 C 38.2422 3.9883 35.9688 1.8086 32.3595 1.8086 L 23.5938 1.8086 C 19.9844 1.8086 17.7344 3.9883 17.7344 7.3398 L 17.7344 10.8555 L 7.5391 10.8555 C 6.6016 10.8555 5.7813 11.6758 5.7813 12.6367 C 5.7813 13.5976 6.6016 14.3945 7.5391 14.3945 L 9.8829 14.3945 L 11.5000 48.6836 C 11.6641 52.0586 13.8907 54.1914 17.2657 54.1914 L 38.7579 54.1914 C 42.1095 54.1914 44.3595 52.0351 44.5235 48.6602 Z M 21.4844 7.5742 C 21.4844 6.2383 22.4688 5.3008 23.8751 5.3008 L 32.1016 5.3008 C 33.5313 5.3008 34.5157 6.2383 34.5157 7.5742 L 34.5157 10.8555 L 21.4844 10.8555 Z M 17.6173 50.6758 C 16.2579 50.6758 15.2500 49.6445 15.1797 48.2852 L 13.5391 14.3945 L 42.3907 14.3945 L 40.8438 48.2852 C 40.7735 49.6680 39.7891 50.6758 38.4063 50.6758 Z M 34.9610 46.5508 C 35.7344 46.5508 36.3204 45.9180 36.3438 45.0273 L 37.0469 20.2773 C 37.0704 19.3867 36.4610 18.7305 35.6641 18.7305 C 34.9376 18.7305 34.3282 19.4102 34.3048 20.2539 L 33.6016 45.0273 C 33.5782 45.8711 34.1641 46.5508 34.9610 46.5508 Z M 21.0626 46.5508 C 21.8595 46.5508 22.4454 45.8711 22.4219 45.0273 L 21.7188 20.2539 C 21.6954 19.4102 21.0626 18.7305 20.3360 18.7305 C 19.5391 18.7305 18.9532 19.3867 18.9766 20.2773 L 19.7032 45.0273 C 19.7266 45.9180 20.2891 46.5508 21.0626 46.5508 Z M 29.4298 45.0273 L 29.4298 20.2539 C 29.4298 19.4102 28.7969 18.7305 28.0235 18.7305 C 27.2500 18.7305 26.5938 19.4102 26.5938 20.2539 L 26.5938 45.0273 C 26.5938 45.8711 27.2500 46.5508 28.0235 46.5508 C 28.7735 46.5508 29.4298 45.8711 29.4298 45.0273 Z",
+  gearA: "M35.367,26.428c-4.687,0-8.5,3.813-8.5,8.5s3.813,8.5,8.5,8.5s8.5-3.813,8.5-8.5S40.054,26.428,35.367,26.428z M35.367,41.428c-3.59,0-6.5-2.91-6.5-6.5s2.91-6.5,6.5-6.5s6.5,2.91,6.5,6.5S38.957,41.428,35.367,41.428z",
+  gearB: "M64.219,27.583h-6.266c-0.468-1-1.1-2.556-1.882-4.001l2.424-2.151c1.563-1.563,1.563-3.958,0.001-5.521l-3.896-3.827c-0.75-0.75-1.768-1.139-2.829-1.139s-2.079,0.439-2.829,1.189l-2.617,2.434c-1.445-0.783-3.742-1.405-4.742-1.874V7.428c0-2.209-1.401-4.845-3.61-4.845h-6.508c-2.209,0-3.882,1.636-3.882,3.845v6.266c-2,0.469-2.659,1.1-4.104,1.883l-2.205-2.426c-0.75-0.75-1.657-1.172-2.718-1.172c-1.061,0-2.023,0.422-2.774,1.172l-3.868,3.896c-1.563,1.563-1.548,4.095,0.015,5.657l2.431,1.878c-0.782,1.445-1.407,3.001-1.875,4.001H6.219c-2.209,0-3.636,1.882-3.636,4.091v6.507c0,2.209,2.427,3.402,4.636,3.402h5.265c0.469,1,1.101,3.402,1.883,4.846l-2.424,2.574c-1.563,1.561-1.563,4.169-0.001,5.731l3.896,3.933c0.75,0.75,1.768,1.192,2.829,1.192s2.079-0.414,2.829-1.164l1.984-2.42c1.445,0.783,2.104,1.418,4.104,1.887v5.266c0,2.209,2.673,3.155,4.882,3.155h5.508c2.209,0,3.61-0.946,3.61-3.155v-5.266c1-0.469,3.297-1.1,4.742-1.883l2.52,2.426c0.75,0.75,1.817,1.172,2.879,1.172c1.061,0,2.101-0.422,2.852-1.172l3.909-3.896c1.562-1.563,1.566-4.095,0.004-5.656l-2.419-2.724c0.782-1.443,1.416-3.846,1.885-4.846h5.265c2.209,0,3.364-1.193,3.364-3.402v-5.507C66.583,30.465,66.428,27.583,64.219,27.583z M62.583,37.583h-7.841c-0.455,3-1.71,6.674-3.771,9.404l4.695,4.844l-3.896,3.972l-4.89-4.661c-2.732,2.062-6.299,3.354-9.299,3.81v7.632h-6v-7.632c-3-0.455-5.93-1.71-8.663-3.771l-4.475,4.697L14.66,51.98l4.75-4.993c-2.061-2.73-3.26-6.404-3.715-9.404H6.583v-6h9.112c0.455-3,1.71-5.827,3.771-8.56l-4.695-4.422l3.896-3.76l4.254,4.767c2.732-2.062,5.663-3.249,8.663-3.704V6.583h6v9.321c3,0.455,6.566,1.71,9.299,3.771l4.792-4.697l3.945,3.896l-4.673,4.148c2.061,2.732,3.341,5.56,3.796,8.56h7.841V37.583z"
+};
+
+const SRC_A = "Particular";
+const SRC_B = "Acme Support";
+
+const TEMPLATES = [
+  { id: "t1", name: "Work Started", source: SRC_A, badge: "platform", used: "copied 6 min ago",
+    body: "<!-- Fill out the following information -->\n\n## 🚀 Work Started\n\n### 📝 High level plan\n\n<!-- include any details that may be useful for others reading this comment -->\n\n### ⏲ Update schedule\n\n<!-- How often do you plan to communicate updates -->" },
+  { id: "t2", name: "Work Completed", source: SRC_A, badge: "platform", used: "copied 40 min ago",
+    body: "## 🎉 Work Complete\n\n<!-- share any information that may be valuable to people reading this message,\n  including related issues, PRs, or any other details -->" },
+  { id: "t3", name: "Needs More Information", source: SRC_A, badge: "platform", used: "copied yesterday",
+    body: "## Needs more information\n\nThanks for opening this. Before we can look into it we need:\n\n- [ ] Version and platform\n- [ ] Steps to reproduce\n- [ ] What you expected to happen\n\nWe'll pick this up as soon as the details are in." },
+  { id: "t4", name: "Reproduction Steps Requested", source: SRC_A, badge: "platform",
+    body: "## Can you reproduce this?\n\nWe weren't able to reproduce the behaviour described. A minimal repro\nrepository or a failing test would help us a great deal." },
+  { id: "t5", name: "Duplicate Issue", source: SRC_A, badge: "platform",
+    body: "Duplicate of #\n\nClosing in favour of the issue above — please follow along there." },
+  { id: "t6", name: "Out of Scope", source: SRC_A, badge: "platform",
+    body: "## Out of scope\n\nThis sits outside what we maintain in this repository. We're leaving it\nclosed, but the discussion stays searchable for anyone who lands here later." },
+  { id: "t7", name: "Release Notes Entry", source: SRC_A, badge: "platform",
+    body: "## Release notes\n\n**Area:**\n**Change:**\n**Breaking:** no\n\n<!-- one sentence, written for someone upgrading -->" },
+  { id: "t8", name: "Security Triage", source: SRC_B, badge: "support",
+    body: "## Security triage\n\nThank you for the report. We've moved this to a private advisory and will\nrespond within two business days. Please do not add further detail here." },
+  { id: "t9", name: "Stale — Closing", source: SRC_B, badge: "support",
+    body: "## Closing as stale\n\nThere's been no activity here for 60 days, so we're closing it to keep the\nqueue honest. Comment and we'll reopen." },
+  { id: "t10", name: "Support Handoff", source: SRC_B, badge: "support",
+    body: "## Handing off to support\n\nThis needs account-level access we don't have on GitHub. Please open a ticket\nat support.example.com and reference this issue." }
+];
+
+const RECENT_IDS = ["t1", "t2", "t3"];
+
+const firstLine = (body) => {
+  for (const line of body.split("\n")) {
+    const t = line.trim();
+    if (t && !t.startsWith("<!--")) return t;
+  }
+  return body.split("\n")[0] || "";
+};
+
+class Component extends DCLogic {
+  state = {
+    query: "", pQuery: "", open: {}, collapsed: {}, copied: null, tabHover: false,
+    refresh: 30, edgeTab: true, draftOrg: {},
+    sources: [
+      { id: "s1", name: "Particular", url: "https://github.com/Particular/docs/blob/main/saved-replies.md", scope: "orgs", owner: "Particular", issues: true, prs: true },
+      { id: "s2", name: "Acme Support", url: "https://github.com/acme/handbook/blob/main/support-replies.md", scope: "all", owner: "", issues: true, prs: false }
+    ]
+  };
+
+  patchSource(id, patch) {
+    this.setState((s) => ({ sources: s.sources.map((x) => (x.id === id ? Object.assign({}, x, patch) : x)) }));
+  }
+
+  addSource() {
+    const id = "s" + (Date.now() % 100000);
+    this.setState((s) => ({ sources: s.sources.concat([{ id, name: "", url: "", scope: "all", owner: "", issues: true, prs: true }]) }));
+  }
+
+  removeSource(id) {
+    this.setState((s) => ({ sources: s.sources.filter((x) => x.id !== id) }));
+  }
+
+  optionsVals() {
+    const ON_BG = "#201e1d", ON_FG = "#ffffff", OFF_BG = "transparent", OFF_FG = "#605d5d";
+    const sources = this.state.sources.map((s, i) => ({
+      allBg: s.scope === "all" ? ON_BG : OFF_BG,
+      allFg: s.scope === "all" ? ON_FG : OFF_FG,
+      orgsBg: s.scope === "orgs" ? ON_BG : OFF_BG,
+      orgsFg: s.scope === "orgs" ? ON_FG : OFF_FG,
+      issuesOnBg: s.issues ? ON_BG : OFF_BG,
+      issuesOnFg: s.issues ? ON_FG : OFF_FG,
+      issuesOffBg: s.issues ? OFF_BG : ON_BG,
+      issuesOffFg: s.issues ? OFF_FG : ON_FG,
+      prsOnBg: s.prs ? ON_BG : OFF_BG,
+      prsOnFg: s.prs ? ON_FG : OFF_FG,
+      prsOffBg: s.prs ? OFF_BG : ON_BG,
+      prsOffFg: s.prs ? OFF_FG : ON_FG,
+      id: s.id,
+      index: String(i + 1).padStart(2, "0"),
+      name: s.name,
+      nameShown: s.name || "Untitled source",
+      url: s.url,
+      scopeAll: s.scope === "all",
+      scopeOrgs: s.scope === "orgs",
+      owner: s.owner,
+      ownerMissing: s.scope === "orgs" && !s.owner.trim(),
+      issuesOn: s.issues, issuesOff: !s.issues,
+      prsOn: s.prs, prsOff: !s.prs,
+      onName: (e) => this.patchSource(s.id, { name: e.target.value }),
+      onUrl: (e) => this.patchSource(s.id, { url: e.target.value }),
+      setAll: () => this.patchSource(s.id, { scope: "all" }),
+      setOrgs: () => this.patchSource(s.id, { scope: "orgs" }),
+      setIssues: (v) => () => this.patchSource(s.id, { issues: v }),
+      issuesYes: () => this.patchSource(s.id, { issues: true }),
+      issuesNo: () => this.patchSource(s.id, { issues: false }),
+      prsYes: () => this.patchSource(s.id, { prs: true }),
+      prsNo: () => this.patchSource(s.id, { prs: false }),
+      onOwner: (e) => this.patchSource(s.id, { owner: e.target.value.replace(/^https?:\/\/github\.com\//i, "").replace(/\/$/, "") }),
+      remove: () => this.removeSource(s.id)
+    }));
+    return {
+      sources,
+      sourceCount: sources.length + (sources.length === 1 ? " source" : " sources"),
+      refresh: this.state.refresh,
+      onRefresh: (e) => this.setState({ refresh: e.target.value }),
+      edgeOnBg: this.state.edgeTab ? ON_BG : OFF_BG,
+      edgeOnFg: this.state.edgeTab ? ON_FG : OFF_FG,
+      edgeOffBg: this.state.edgeTab ? OFF_BG : ON_BG,
+      edgeOffFg: this.state.edgeTab ? OFF_FG : ON_FG,
+      edgeYes: () => this.setState({ edgeTab: true }),
+      edgeNo: () => this.setState({ edgeTab: false }),
+      addSource: () => this.addSource()
+    };
+  }
+
+  toggle(key) {
+    this.setState((s) => ({ open: Object.assign({}, s.open, { [key]: !s.open[key] }) }));
+  }
+
+  copy(t, e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (navigator.clipboard) navigator.clipboard.writeText(t.body).catch(() => {});
+    this.setState({ copied: t.id });
+    clearTimeout(this._ct);
+    this._ct = setTimeout(() => this.setState({ copied: null }), 1500);
+  }
+
+  decorate(t, keyPrefix, multi) {
+    const key = keyPrefix + t.id;
+    return {
+      id: t.id,
+      name: t.name,
+      badge: t.source,
+      showBadge: !!multi,
+      source: t.source,
+      used: t.used || "not used yet",
+      preview: firstLine(t.body),
+      body: t.body,
+      meta: t.source,
+      open: !!this.state.open[key],
+      copied: this.state.copied === t.id,
+      copyLabel: this.state.copied === t.id ? "Copied" : "Copy",
+      toggle: () => this.toggle(key),
+      copy: (e) => this.copy(t, e)
+    };
+  }
+
+  match(t, q) {
+    if (!q) return true;
+    const s = q.toLowerCase();
+    return t.name.toLowerCase().includes(s) || t.body.toLowerCase().includes(s);
+  }
+
+  renderVals() {
+    const q = this.state.query;
+    const pq = this.state.pQuery;
+    const multi = this.props.secondRepoConfigured ?? false;
+    const pool = multi ? TEMPLATES : TEMPLATES.map((t) => Object.assign({}, t, { source: SRC_A }));
+    const recentIds = multi ? ["t1", "t8", "t3"] : RECENT_IDS;
+
+    const popupItems = pool.filter((t) => this.match(t, q)).map((t) => this.decorate(t, "p:", multi));
+
+    const panelPool = pool.filter((t) => this.match(t, pq));
+    const showRecent = (this.props.showRecentSection ?? true) && !pq;
+    const recent = recentIds.map((id) => pool.find((t) => t.id === id)).filter(Boolean).map((t) => this.decorate(t, "r:", multi));
+
+    const popupBySource = [];
+    for (const t of pool.filter((t) => this.match(t, q))) {
+      let g = popupBySource.find((x) => x.source === t.source);
+      if (!g) { g = { source: t.source, items: [] }; popupBySource.push(g); }
+      g.items.push(this.decorate(t, "p:", false));
+    }
+    const collapsed = this.state.collapsed || {};
+    const popupGroups = popupBySource.map((g) => {
+      const isOpen = !collapsed[g.source];
+      return {
+        source: g.source,
+        count: g.items.length + " templates",
+        items: isOpen ? g.items : [],
+        open: isOpen,
+        chevronRotate: isOpen ? "rotate(0deg)" : "rotate(-90deg)",
+        toggle: () => this.setState((s) => ({ collapsed: Object.assign({}, s.collapsed, { [g.source]: !(s.collapsed || {})[g.source] }) }))
+      };
+    });
+
+    const bySource = [];
+    for (const t of panelPool) {
+      let g = bySource.find((x) => x.source === t.source);
+      if (!g) { g = { source: t.source, items: [] }; bySource.push(g); }
+      g.items.push(this.decorate(t, "g:", false));
+    }
+    const groups = bySource.map((g) => ({ source: g.source, count: g.items.length + " templates", items: g.items }));
+
+    const oldPanelRows = TEMPLATES.slice(0, 6).map((t) => ({
+      name: t.name, body: t.body, open: !!this.state.open["o:" + t.id]
+    }));
+    oldPanelRows[0].open = true;
+
+    const label = this.props.edgeTabLabel ?? "Saved replies";
+
+    return Object.assign(this.optionsVals(), {
+      ic: IC,
+      configs: [
+        { name: "GitHub", url: "awright18/SharedSavedReplie…", initial: "G" },
+        { name: "awright18", url: "awright18/SharedSavedReplie…", initial: "A" },
+        { name: "sample", url: "awright18/SharedSavedReplie…", initial: "S" }
+      ],
+      oldPanelRows,
+      popupItems,
+      popupGroups,
+      popupGrouped: true,
+      popupFlat: false,
+      noResults: popupItems.length === 0,
+      recent,
+      groups,
+      showRecent,
+      query: q,
+      pQuery: pq,
+      countLabel: (multi ? bySource.length + " repos" : SRC_A) + " · " + pool.length + " templates",
+      edgeLabel: label,
+      tabCollapsed: !this.state.tabHover,
+      tabOpen: this.state.tabHover,
+      onTabIn: () => this.setState({ tabHover: true }),
+      onTabOut: () => this.setState({ tabHover: false }),
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      onPQuery: (e) => this.setState({ pQuery: e.target.value })
+    });
+  }
+}
+
+</script>
+</body>
+</html>

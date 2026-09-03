@@ -12,6 +12,14 @@
   "side_panel":{
     "default_path": "pages/sidepanel/saved-replies-sidepanel.html"
   },
+  "commands": {
+    "toggle-side-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Period"
+      },
+      "description": "Toggle the saved replies panel"
+    }
+  },
   "content_scripts": [
     {
       "matches": [
@@ -28,16 +36,15 @@
         "js/messaging.js",
         "js/message-receivers.js",
         "js/tabs.js",
-        "js/saved-replies-storage.js",
-        "js/sidepanel.js",
         "js/urls.js",
+        "js/team-sources.js",
+        "js/sidepanel.js",
         "js/events.js",
         "js/can-load-saved-replies.js",
         "pages/content-script/content-script-copy-saved-reply-element.js",
         "pages/content-script/content-script-urls.js",
         "pages/content-script/content-script-messaging.js",
         "pages/sidepanel/saved-replies-sidepanel-toggle-button.js",
-        "pages/sidepanel/saved-replies-items.js",    
         "pages/content-script/content-script.js"
       ]
     }
@@ -58,14 +65,13 @@
       "pages/sidepanel/*.svg"
     ],
     "matches":[
-      "<all_urls>"
+      "https://github.com/*"
     ]
   }],
   "permissions": [
     "sidePanel",
     "activeTab",
     "tabs",
-    "scripting",
     "webNavigation",
     "alarms",
     "storage",

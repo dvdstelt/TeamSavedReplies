@@ -1,65 +1,70 @@
 
-const isSidebarButtonEnabled = async () => {
-    const result = await chrome.storage.local.get(["settings"]);
-    const settings = result["settings"];
-    return settings?.showSidebarButtonDefault ?? true;
-};
+// Whether any source applies to the page being viewed. Remembered so the tab can
+// be re-evaluated when the setting changes without losing this.
+let canLoadSavedRepliesHere = true;
 
-const showHideSavedRepliesButton = async (showButton) => {
+const isEdgeTabEnabled = async () => (await getGlobalSettings()).showEdgeTab;
 
-    if (!await isSidebarButtonEnabled()) return;
+const findEdgeTab = () => document.querySelector(".team-saved-replies-edge-tab");
 
-    var showSavedRepliesButton =
-        document.querySelector(".team-saved-replies-button-container");
+const removeEdgeTab = () => findEdgeTab()?.remove();
 
-    if (showSavedRepliesButton === undefined || showSavedRepliesButton == null) {
+const addEdgeTab = async () => {
 
-        showSavedRepliesButton = createShowSavedRepliesButton();
+    const edgeTab = createShowSavedRepliesButton();
 
-        await addShowSavedRepliesClickHandler(showSavedRepliesButton);
+    await addShowSavedRepliesClickHandler(edgeTab);
 
-        document.body.appendChild(showSavedRepliesButton);
-    }
+    document.body.appendChild(edgeTab);
 
-    if (showSavedRepliesButton !== undefined) {
-
-        if (showButton !== undefined && showButton) {
-            showSavedRepliesButton?.classList?.remove("hide");
-        } else {
-            showSavedRepliesButton?.classList?.add("hide");
-        }
-    }
+    return edgeTab;
 }
 
-const main = async () => {
+// Turning the setting off has to take away a tab that is already on the page,
+// not merely stop the next one being added.
+const applyEdgeTabVisibility = async () => {
 
-    console.log("main called");
+    if (!await isEdgeTabEnabled() || !shouldLoadContentScript(window.location.href)) {
 
-    const url = window.location.href;
+        removeEdgeTab();
 
-    if (!shouldLoadContentScript(url)) {
         return;
     }
 
-    if (!await isSidebarButtonEnabled()) return;
+    const edgeTab = findEdgeTab() ?? await addEdgeTab();
 
-    const showSavedRepliesButton =
-        document.querySelector(".team-saved-replies-button-container");
-
-    if (showSavedRepliesButton === undefined || showSavedRepliesButton == null) {
-
-        const showSavedRepliesButton = createShowSavedRepliesButton();
-
-        await addShowSavedRepliesClickHandler(showSavedRepliesButton);
-
-        document.body.appendChild(showSavedRepliesButton);
-    }
+    edgeTab.classList.toggle("hide", canLoadSavedRepliesHere === false);
 }
+
+const main = async () => await applyEdgeTabVisibility();
+
+// The options page can toggle the tab while GitHub is open, so the setting is
+// watched rather than only read once at page load.
+chrome.storage.onChanged.addListener((changes) => {
+
+    if (changes[SETTINGS_KEY]) {
+
+        applyEdgeTabVisibility();
+    }
+});
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     handleCanLoadSavedRepliesChanged(request, (canLoadSavedReplies) => {
-        showHideSavedRepliesButton(canLoadSavedReplies);
+        canLoadSavedRepliesHere = canLoadSavedReplies;
+        applyEdgeTabVisibility();
     });
+});
+
+// The side panel asks the page to take a template. Insertion is synchronous DOM
+// work, so this responds immediately rather than returning a promise, which
+// chrome.runtime.onMessage does not await.
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+    if (!canHandleCommand(request, CONTENT_SCRIPT, "InsertTemplateIntoComment")) {
+        return;
+    }
+
+    sendResponse({ inserted: insertReplyIntoTextarea(request.data.body) === true });
 });
 
 document.addEventListener("soft-nav:end", main);

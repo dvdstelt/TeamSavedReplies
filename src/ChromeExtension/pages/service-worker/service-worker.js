@@ -3,9 +3,8 @@ importScripts(["../../js/message-receivers.js"]);
 importScripts(["../../js/time.js"]);
 importScripts(["../../js/null.js"]);
 importScripts(["../../js/tabs.js"]);
-importScripts(["../../js/elements.js"]);
-importScripts(["../../js/saved-replies-storage.js"]);
 importScripts(["../../js/urls.js"]);
+importScripts(["../../js/team-sources.js"]);
 importScripts(["../../js/events.js"]);
 importScripts(["../../js/can-load-saved-replies.js"])
 importScripts(["offscreen-document.js"]);
@@ -15,6 +14,8 @@ importScripts(["service-worker-alarms.js"]);
 importScripts(["service-worker-settings.js"]);
 
 const OFFSCREEN = "offscreen";
+
+const REFRESH_ALARM = "refresh-sources";
 
 //set the activeTabId
 let activeTabId;
@@ -58,24 +59,93 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
 });
 
-const sendUpdateTeamSavedRepliesCommand = async (name, url) => {
+const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-    const command = createCommand(`UpdateTeamSavedReplies`, OFFSCREEN, { name: name, url: url });
+// A freshly created offscreen document does not always have its message listener
+// registered by the time createDocument resolves, and the first send is then lost.
+// Retrying briefly is what makes a sync on first configure actually land.
+const sendToOffscreenDocument = async (command, attempts = 5) => {
 
-    await send(command);
+    for (let attempt = 1; attempt <= attempts; attempt++) {
 
-    return true;
+        try {
+            return await chrome.runtime.sendMessage(command);
+        }
+        catch (error) {
+
+            if (attempt === attempts) {
+                throw error;
+            }
+
+            console.log(`offscreen not ready, retrying`, error.message);
+
+            await delay(100 * attempt);
+        }
+    }
 }
 
-const sendUpdateTeamSavedRepliesMessageToOffScreen = async (name) => {
+// Fetching runs in the offscreen document because the service worker has no DOM
+// and the replies are parsed out of GitHub's rendered markdown page.
+const refreshSource = async (source) => {
 
-    await setupOffscreenDocument();
+    if (isNullOrEmpty(source?.url)) {
 
-    const url = await getUrlForShareSavedRepliesName(name);
+        await saveSyncStatus(source.id, { state: `error`, message: `No templates URL set.` });
 
-    await sendUpdateTeamSavedRepliesCommand(name, url);
+        return;
+    }
 
-    // await closeOffscreenDocument();
+    await saveSyncStatus(source.id, { state: `syncing` });
+
+    try {
+        await setupOffscreenDocument();
+
+        const command =
+            createCommand(`UpdateTeamSavedReplies`, OFFSCREEN, { sourceId: source.id, url: source.url });
+
+        const response = await sendToOffscreenDocument(command);
+
+        if (response?.error) {
+
+            await saveSyncStatus(source.id, { state: `error`, message: response.error });
+
+            return;
+        }
+
+        const replies = response?.replies ?? [];
+
+        await saveRepliesInLocalStorage(source.id, replies);
+
+        await saveSyncStatus(source.id, {
+            state: replies.length === 0 ? `empty` : `ok`,
+            count: replies.length
+        });
+    }
+    catch (error) {
+
+        console.log(`failed to refresh ${source.id}`, error);
+
+        await saveSyncStatus(source.id, { state: `error`, message: error?.message ?? String(error) });
+    }
+}
+
+// One source failing must not stop the rest from syncing.
+const refreshSources = async (sources) => {
+
+    for (const source of sources) {
+
+        await refreshSource(source);
+    }
+}
+
+const refreshAllSources = async () => await refreshSources(await getSources());
+
+// One alarm for every source: the refresh rate is a global setting now.
+const scheduleRefresh = async () => {
+
+    const settings = await getGlobalSettings();
+
+    await createAlarm(REFRESH_ALARM, settings.refreshRateInMinutes);
 }
 
 chrome.runtime.onInstalled.addListener(async (details) => {
@@ -83,65 +153,56 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason !== "install" && details.reason !== "update") return;
 
     await saveInitialSettings();
+
+    await scheduleRefresh();
+
+    await refreshAllSources();
 });
 
 chrome.storage.onChanged.addListener(async (changes, area) => {
 
-    //if changes contains saved replies updates then send command
+    if (changes[SOURCES_KEY]) {
 
-    const configKeyRegEx = /(?<name>.+)-config/;
+        const { oldValue, newValue } = changes[SOURCES_KEY];
 
-    for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
+        await removeOrphanedSourceData(newValue);
 
-        console.log(
-            `Storage key "${key}" in namespace "${area}" changed.`,
-            `Old value was "${oldValue}", new value is "${newValue}".`
-        );
+        // Sync straight away when a source is added or repointed, so configuring
+        // one shows its templates instead of waiting for the next alarm.
+        const needRefresh =
+            (newValue ?? []).filter((source) => sourceNeedsRefresh(oldValue, source));
 
-        const matches = key.match(configKeyRegEx);
+        await refreshSources(needRefresh);
+    }
 
-        const name = matches?.groups['name'];
+    if (changes[SETTINGS_KEY]) {
 
-        if (name && !isNullOrEmpty(newValue)) {
+        const { oldValue, newValue } = changes[SETTINGS_KEY];
 
-            await sendUpdateTeamSavedRepliesMessageToOffScreen(name);
+        if (oldValue?.refreshRateInMinutes !== newValue?.refreshRateInMinutes) {
 
-            return;
-        }
-
-        //config removed 
-        if (name && !isNullOrEmpty(oldValue) && isNullOrEmpty(newValue)) {
-
-            console.log(`config removed for ${name}`);
-
-            await removeDataFromLocalStorage(name);
-
-            await clearAlarm(name)
+            await scheduleRefresh();
         }
     }
 });
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-    handleOpenTeamSavedRepliesPanel(request, () =>{  
-        
+    handleOpenTeamSavedRepliesPanel(request, () => {
+
         chrome.sidePanel.open({ tabId: activeTabId });
-    });
-
-    await handleSaveTeamSavedRepliesCommand(request, async (name, replies) => {
-
-        console.log(`saving replies for ${name}.`);
-
-        await saveRepliesInLocalStorage(name, replies);
-
-        const config = await getConfigFromLocalStorage(name);
-
-        await createAlarm(name, config.refreshRateInMinutes);
     });
 });
 
-onAlarm(async (name) =>
-    await sendUpdateTeamSavedRepliesMessageToOffScreen(name));
+chrome.commands.onCommand.addListener((command) => {
+
+    if (command === `toggle-side-panel`) {
+
+        chrome.sidePanel.open({ tabId: activeTabId });
+    }
+});
+
+onAlarm(async () => await refreshAllSources());
 
 chrome.webNavigation.onHistoryStateUpdated.addListener( 
     async (details) =>  {

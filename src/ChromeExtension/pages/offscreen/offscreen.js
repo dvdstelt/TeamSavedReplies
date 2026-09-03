@@ -1,27 +1,25 @@
 ﻿
 import { fetchSavedRepliesFromUrl } from "../../js/modules/fetch-saved-replies.js";
-import { handleUpdateTeamSavedRepliesCommand, sendSaveTeamSavedRepliesCommand } from "./offscreen-messaging.js";
+import { canHandleUpdateTeamSavedRepliesCommand } from "./offscreen-messaging.js";
 
-chrome.runtime.onMessage.addListener( async (request, sender, sendResponse) => {
+// The parsed replies are returned as the response to the command rather than
+// pushed back as a second message, so the service worker knows whether the fetch
+// actually succeeded and can report it.
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-    await handleUpdateTeamSavedRepliesCommand(
-        request,       
-        async (name,url) => {
-            try {                                    
+    if (!canHandleUpdateTeamSavedRepliesCommand(request)) {
+        return;
+    }
 
-                console.log("offscreen-savedRepliesUrl", url);
+    fetchSavedRepliesFromUrl(request.data.url)
+        .then((replies) => sendResponse({ replies: replies }))
+        .catch((error) => {
 
-                const replies = await fetchSavedRepliesFromUrl(url);
-    
-                await sendSaveTeamSavedRepliesCommand(name, replies);    
-            }
-            catch (error){                
-                
-                console.log("offscreen",error);               
-            }
+            console.log("offscreen", error);
 
-            return true;
-    }); 
-    
+            sendResponse({ error: error?.message ?? String(error) });
+        });
+
+    // Literal true: anything else closes the port before the fetch resolves.
     return true;
 });
