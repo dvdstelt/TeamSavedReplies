@@ -1,0 +1,92 @@
+# Chrome Web Store listing
+
+Copy for the Developer Dashboard. Kept here so it is versioned with the code it describes.
+
+## Category
+
+**Developer Tools.**
+
+The audience is people working in GitHub issues and pull requests, which is where that category's browsers are looking. *Workflow & Planning* is the defensible alternative, since the extension is really about team communication rather than code, but it puts the listing next to calendars and to-do apps rather than next to the other GitHub tooling.
+
+## Name
+
+Team Saved Replies
+
+## Summary
+
+Short description, 132 characters maximum.
+
+> Share one set of comment templates with your team on GitHub. Keep them in a markdown file and everyone stays in sync.
+
+## Detailed description
+
+The store renders this as plain text, so it uses line breaks rather than markdown.
+
+> GitHub's saved replies are personal. Everyone on a team ends up writing their own version of the same answer, and they drift apart.
+>
+> Team Saved Replies fixes that by keeping the templates in a markdown file in a repository you already have. Anyone who can read that file gets the same replies, and when someone improves one, everyone picks it up on the next refresh.
+>
+> HOW IT WORKS
+>
+> Write templates in a markdown file: a heading for the name, a fenced code block for the reply. Commit it. Point the extension at that file's page on GitHub. That is the whole setup.
+>
+> WHERE THE TEMPLATES SHOW UP
+>
+> - In GitHub's own saved replies dialog, alongside your personal ones, on issues and pull requests.
+> - In the extension popup, as a searchable list you can copy from.
+> - In a side panel, with what you used recently at the top, grouped by repository.
+> - Behind a tab on the edge of the GitHub page, which opens the side panel.
+>
+> CONFIGURING IT
+>
+> Add as many template files as you like. Each one can apply to all of GitHub or be limited to a single organisation, and to issues, pull requests, or both. So a source for your own organisation and one for an open source project you maintain can sit side by side without getting in each other's way.
+>
+> Templates are re-fetched on a schedule you choose, and you can sync any source by hand to check a URL works.
+>
+> PRIVACY
+>
+> Nothing is collected and nothing is sent anywhere. Your sources and the cached templates stay in your browser's local storage. The only network request the extension makes is to the GitHub page you configured, using your own GitHub session, which is why private repositories work if you can already read them.
+
+### Paragraph to add once the inline menu ships
+
+Not in the current build. Add under "WHERE THE TEMPLATES SHOW UP" when `feature/inline-template-menu` is merged.
+
+> - Inline as you type. Type ! at the start of a word in any comment box and a filtered list appears at the cursor. Keep typing to narrow it, press Enter to insert. The list is ordered by what you use most, so the reply you reach for daily is usually the first one. The trigger can be changed or switched off.
+
+## Single purpose
+
+Required by review.
+
+> Team Saved Replies gives a team one shared set of comment templates on GitHub. The templates live in a markdown file in a repository, and the extension makes them available wherever the user writes a comment on github.com.
+
+## Permission justifications
+
+One per permission; review rejects vague answers.
+
+| Permission | Justification |
+| --- | --- |
+| `storage` | Stores the configured template sources and the cached templates locally. No other persistence is used. |
+| `alarms` | Schedules the periodic re-fetch of each source at the interval the user sets. |
+| `offscreen` | Templates are parsed out of GitHub's rendered markdown page. A service worker has no DOM, so the parsing happens in an offscreen document. |
+| `tabs` | Reads the URL of the active tab to decide which sources apply to the page being viewed, since a source can be scoped to one organisation and to issues or pull requests. |
+| `webNavigation` | GitHub navigates client side. This detects those navigations so the page's state is re-evaluated without a reload. |
+| `sidePanel` | Provides the side panel listing of templates. |
+| `activeTab` | See the note below; likely removable. |
+| `https://github.com/*` | The extension only runs on GitHub, and fetches the templates file from the GitHub URL the user configured. |
+
+### `activeTab` is probably unnecessary
+
+Content scripts are declared for `https://github.com/*` and the matching host permission is already requested, so the temporary access `activeTab` grants is not obviously used by anything. Removing it would shorten the install prompt. It should be dropped only after confirming in a real install that the popup, side panel and edge tab all still work.
+
+## Data usage disclosures
+
+- Does not collect or transmit any user data.
+- No personally identifiable information, health, financial, authentication, personal communications, location, web history or user activity is collected.
+- No data is sold or transferred to third parties.
+- A privacy policy URL is not required while nothing is collected.
+
+## Assets still needed
+
+- 128 x 128 store icon.
+- At least one screenshot at 1280 x 800 or 640 x 400. The popup over a GitHub issue, and the options page, are the two that explain it fastest.
+- Optional 440 x 280 small promo tile.
