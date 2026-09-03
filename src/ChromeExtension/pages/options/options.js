@@ -479,7 +479,7 @@ const createGlobalStrip = () => {
                             (value) => { workingSettings.inlineMenuEnabled = value; render(); }),
                         `Typing the trigger in a GitHub comment opens a filtered list of templates at the cursor.`),
                     createLabelledField(`Trigger`, triggerInput,
-                        `Recognised at the start of a word. Two characters are safer than one: a lone ! collides with markdown images.`)
+                        `Recognised at the start of a word. Use more than one character if you want it to fire less readily.`)
                 ],
                 className: `options-global-grid`
             })

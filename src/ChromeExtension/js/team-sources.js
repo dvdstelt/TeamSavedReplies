@@ -7,7 +7,7 @@ const USAGE_COUNTS_KEY = `usageCounts`;
 const EDGE_TAB_POSITION_KEY = `edgeTabPosition`;
 
 const DEFAULT_REFRESH_RATE_IN_MINUTES = 30;
-const DEFAULT_INLINE_TRIGGER = `!!`;
+const DEFAULT_INLINE_TRIGGER = `!`;
 const RECENTLY_USED_LIMIT = 3;
 
 const repliesKeyFor = (sourceId) => `replies:${sourceId}`;
