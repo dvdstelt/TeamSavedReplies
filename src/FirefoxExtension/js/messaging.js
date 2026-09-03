@@ -1,9 +1,9 @@
 ﻿const EVENT = "event";
 const COMMAND = "command";
 
-const isCommand = (message) => message.messageType = COMMAND;
+const isCommand = (message) => message.messageType === COMMAND;
 
-const isEvent = (message) => message.messageType = EVENT;
+const isEvent = (message) => message.messageType === EVENT;
 
 const canHandleCommand = (message, target, messageName) => {
 

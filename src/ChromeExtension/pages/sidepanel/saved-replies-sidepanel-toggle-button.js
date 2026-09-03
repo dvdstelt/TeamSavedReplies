@@ -25,7 +25,10 @@ const getToggleShortcut = async () => {
     try {
         const commands = await chrome.commands.getAll();
 
-        return commands.find((command) => command.name === `toggle-side-panel`)?.shortcut;
+        // Chrome defines its own command; Firefox uses the built in sidebar one.
+        return commands.find((command) =>
+            command.name === `toggle-side-panel`
+            || command.name === `_execute_sidebar_action`)?.shortcut;
     }
     catch (error) {
 

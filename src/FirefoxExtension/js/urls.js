@@ -79,9 +79,7 @@ const getGitHubOwner = (url) => {
     }
 }
 
-const canLoadRepliesForUrl = (config,url) => {
-
-    console.log("evaluating can load replies from url", url);
+const sourceAppliesToUrl = (source, url) => {
 
     if(url === null){
         url = window.location.href;
@@ -98,24 +96,19 @@ const canLoadRepliesForUrl = (config,url) => {
         return false;
     }
 
-    const validOwner = config.allowEverywhere || gitHubOwner.localeCompare(config.limitToGitHubOwner,undefined,{ sensitivity : `base`}) === 0 ? true : false;
+    const scopedToAll = source.scope !== `orgs`;
 
-    console.log("validOwner",validOwner);
+    const validOwner = scopedToAll
+        || (!!source.owner
+            && gitHubOwner.localeCompare(source.owner, undefined, { sensitivity: `base` }) === 0);
 
-    const validForIssue = (isGitHubIssueUrl(url) && config.includeIssues);
-
-    console.log("validForIssue",validForIssue);
-
-    const validForPullRequest = (isGitHubPullRequestUrl(url) && config.includePullRequests);
-
-    console.log("validForPullRequest",validForPullRequest);
-
-    if (validOwner
-        && (validForIssue || validForPullRequest)) {
-
-        return true;
+    if(!validOwner){
+        return false;
     }
 
-    return false;
-}
+    const validForIssue = isGitHubIssueUrl(url) && source.issues;
 
+    const validForPullRequest = isGitHubPullRequestUrl(url) && source.prs;
+
+    return validForIssue || validForPullRequest;
+}

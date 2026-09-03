@@ -1,31 +1,45 @@
 {
   "manifest_version": 3,
   "name": "Team Saved Replies",
-  "description": "Adds saved replies to GitHub's saved replies list when commenting on issues or pull requests.",
+  "description": "Share one set of comment templates with your team on GitHub. Keep them in a markdown file and everyone stays in sync.",
   "version": "0.1.0",
-  "action":{
+  "action": {
     "default_popup": "pages/popup/popup.html"
   },
   "browser_specific_settings": {
     "gecko": {
       "id": "{921737e1-c063-41c6-9adc-7b7e3e41fbfe}",
       "strict_min_version": "144.0",
-      "data_collection_permissions":{
-        "required":["none"]
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
       }
     }
   },
   "background": {
     "scripts": [
-      "pages/service-worker/service-worker.js"
-    ],
-    "type":"module"
+      "js/messaging.js",
+      "js/message-receivers.js",
+      "js/time.js",
+      "js/null.js",
+      "js/tabs.js",
+      "js/urls.js",
+      "js/team-sources.js",
+      "js/events.js",
+      "js/can-load-saved-replies.js",
+      "js/fetch-saved-replies.js",
+      "pages/background/background-storage.js",
+      "pages/background/background-alarms.js",
+      "pages/background/background-settings.js",
+      "pages/background/background.js"
+    ]
   },
-  "sidebar_action":{
+  "sidebar_action": {
     "default_panel": "pages/sidepanel/saved-replies-sidepanel.html"
   },
   "commands": {
-   "_execute_sidebar_action": {
+    "_execute_sidebar_action": {
       "suggested_key": {
         "default": "Ctrl+Shift+Y"
       }
@@ -36,8 +50,8 @@
       "matches": [
         "https://github.com/*"
       ],
-      "css":[
-            "pages/sidepanel/sidepanel-button.css"
+      "css": [
+        "pages/content-script/inline-template-menu.css"
       ],
       "js": [
         "js/time.js",
@@ -47,18 +61,19 @@
         "js/messaging.js",
         "js/message-receivers.js",
         "js/tabs.js",
-        "js/saved-replies-storage.js",
-        "js/sidepanel.js",
         "js/urls.js",
+        "js/team-sources.js",
+        "js/sidepanel.js",
         "js/events.js",
         "js/can-load-saved-replies.js",
         "pages/content-script/content-script-copy-saved-reply-element.js",
-        "pages/content-script/content-script-messaging.js",
         "pages/content-script/content-script-urls.js",
+        "pages/content-script/content-script-messaging.js",
+        "pages/content-script/inline-template-menu.js",
         "pages/content-script/content-script.js"
       ]
     }
-  ], 
+  ],
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -66,29 +81,19 @@
     "64": "icons/icon64.png",
     "128": "icons/icon128.png"
   },
-  "options_ui":{
-    "page":"pages/options/options.html",
-    "open_in_tab":true
+  "options_ui": {
+    "page": "pages/options/options.html",
+    "open_in_tab": true
   },
-  "web_accessible_resources":[{
-    "resources":[
-      "pages/sidepanel/*.svg"
-    ],
-    "matches":[
-      "<all_urls>"
-    ]
-  }],
   "permissions": [
     "activeTab",
     "tabs",
-    "scripting",
     "webNavigation",
-    "webRequest",
     "alarms",
     "storage",
     "menus"
   ],
-  "host_permissions":[
-    "*://*.github.com/*"
+  "host_permissions": [
+    "https://github.com/*"
   ]
 }

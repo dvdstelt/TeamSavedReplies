@@ -36,4 +36,3 @@ const onAlarm = async (handleAlarm) => {
         });
 }
 
-export { onAlarm, clearAlarm, createAlarm }

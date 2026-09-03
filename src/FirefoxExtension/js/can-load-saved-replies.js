@@ -1,12 +1,10 @@
 const canLoadSavedRepliesForURL = async (url) =>{
 
-    const configs = await getConfigsFromLocalStorage();
+    const sources = await getSources();
 
-    for(let config of configs){
+    for(let source of sources){
 
-        const result = canLoadRepliesForUrl(config, url);
-
-        if(result){
+        if(sourceAppliesToUrl(source, url)){
             return true;
         }
     }

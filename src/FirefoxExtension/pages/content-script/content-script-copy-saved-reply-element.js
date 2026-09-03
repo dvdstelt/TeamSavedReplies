@@ -32,16 +32,13 @@ const matchesSearch = (reply, searchText) => {
     return reply.name.toLowerCase().includes(searchText);
 };
 
-const insertReplyIntoTextarea = (body) => {
-    const textarea = document.querySelector(
-        '#new_comment_field, textarea[name="comment[body]"], div[data-testid="markdown-editor-comment-composer"] textarea, textarea[class*="prc-Textarea-TextArea"]'
-    );
-    if (!textarea) return;
+// Writing through the native setter and firing input is what makes React notice
+// the change; assigning to value directly does not.
+const replaceRangeInTextarea = (textarea, start, end, body) => {
+    if (!textarea) return false;
 
     textarea.focus();
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
     const currentValue = textarea.value;
     const newValue = currentValue.substring(0, start) + body + currentValue.substring(end);
 
@@ -54,6 +51,17 @@ const insertReplyIntoTextarea = (body) => {
 
     const newCursorPos = start + body.length;
     textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+    return true;
+};
+
+const insertReplyIntoTextarea = (body) => {
+    const textarea = document.querySelector(
+        '#new_comment_field, textarea[name="comment[body]"], div[data-testid="markdown-editor-comment-composer"] textarea, textarea[class*="prc-Textarea-TextArea"]'
+    );
+    if (!textarea) return false;
+
+    return replaceRangeInTextarea(textarea, textarea.selectionStart, textarea.selectionEnd, body);
 };
 
 const closeSavedRepliesDialog = () => {
@@ -203,7 +211,7 @@ const onPrimerReactDialogOpened = async (dialog) => {
     console.log("onPrimerReactDialogOpened: dialog detected");
 
     if (!_cachedSavedReplies) {
-        _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
+        _cachedSavedReplies = await getTemplatesForUrl(null);
     }
 
     if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) return;
@@ -369,7 +377,7 @@ const onLegacyDialogDetected = (dialog) => {
 
 const onLegacyDialogReady = async (actualDialog) => {
     if (!_cachedSavedReplies) {
-        _cachedSavedReplies = await getMatchingSavedReplyConfigsFromLocalStorage(null);
+        _cachedSavedReplies = await getTemplatesForUrl(null);
     }
 
     if (!_cachedSavedReplies || _cachedSavedReplies.length === 0) return;

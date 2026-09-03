@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Team Saved Replies",
-  "description": "Adds saved replies to GitHub's saved replies list when commenting on issues or pull requests.",
-  "version": "0.1.0",
+  "description": "Share one set of comment templates with your team on GitHub. Keep them in a markdown file and everyone stays in sync.",
+  "version": "0.2.0",
   "action":{
     "default_popup": "pages/popup/popup.html"
   },

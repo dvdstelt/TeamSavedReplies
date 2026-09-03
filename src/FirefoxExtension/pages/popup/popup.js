@@ -1,171 +1,195 @@
+let groups = [];
+let activeTabUrl;
+let collapsedGroups = {};
+let query = ``;
+let searchInsideContent = false;
 
-import { arrayIsEmpty} from "../../js/modules/null.js";
-import { createConfigButton } from "./saved-replies-button-element.js";
-import { getTeamSavedReplyConfigurationsFromLocalStorage } from "./popup-storage.js";
-import { applyCurrentTheme } from "../../js/modules/theme.js";
+const describeHeaderSubline = () => {
 
-let configs = [];
+    const templateCount = groups.reduce((total, group) => total + group.templates.length, 0);
 
-const showNoRepliesIfNoConfigs = () =>{
-    
-    const noRepliesElement = document.querySelector(`.no-replies`);
+    if (groups.length === 1) {
 
-    const savedRepliesListElement = document.querySelector(`.saved-replies-list`);
+        return `${groups[0].source.name || `Untitled source`} · ${templateCount} templates`;
+    }
 
-    if(arrayIsEmpty(configs)){                   
+    return `${groups.length} repos · ${templateCount} templates`;
+}
 
-        noRepliesElement.classList.remove(`hide`);            
+const copyTemplate = async (template, label) => {
 
-        savedRepliesListElement.classList.add(`hide`);
+    try {
 
-    }else{
+        await navigator.clipboard.writeText(template.body);
 
-        noRepliesElement.classList.add(`hide`);       
+        flashRowLabel(label, `Copied`);
 
-        savedRepliesListElement.classList.remove(`hide`);
+        await recordTemplateUsed(template.id);
+    }
+    catch (error) {
+
+        console.error(`Failed to copy: `, error);
     }
 }
 
-const hideConfig = (config) => {
-    
-    let configElement = document.querySelector(`[data-saved-replies-name="${config.name}"]`);
+const toggleGroup = async (sourceId) => {
 
-    configElement.style.display = `none`;
+    collapsedGroups[sourceId] = !collapsedGroups[sourceId];
+
+    await setGroupCollapsed(sourceId, collapsedGroups[sourceId]);
+
+    renderList();
 }
 
-const showConfig = (config) => {
+const renderList = () => {
 
-    let configElement = document.querySelector(`[data-saved-replies-name="${config.name}"]`);
+    const list = document.querySelector(`.tsr-list`);
 
-    configElement.style.display = `block`;
-}
+    list.replaceChildren();
 
-const setConfigDisplay = (shouldDisplay,config) => {
+    const matchingGroups = groups
+        .map((group) => ({
+            source: group.source,
+            templates: group.templates.filter((template) => matchesTemplateQuery(template, query, searchInsideContent))
+        }))
+        .filter((group) => group.templates.length > 0 || !query);
 
-    if (shouldDisplay) {
+    const anyMatches = matchingGroups.some((group) => group.templates.length > 0);
 
-       showConfig(config);
+    if (query && !anyMatches) {
 
-    } else {
-       hideConfig(config);
-    }
-}
+        list.append(createEmptyState(query, searchInsideContent));
 
-const filterItems = (searchValue) => {
-
-    if (arrayIsEmpty(configs)) {
         return;
     }
 
-    for (let config of configs) {
+    // Always grouped, even with a single source: with one repo the header is
+    // simply the line naming it.
+    for (const group of matchingGroups) {
 
-        let matchesSearchValue =
-            config.name.includes(searchValue)
-            || config.url.includes(searchValue)
-            || config.limitToGitHubOwner.includes(searchValue)
-            || searchValue === ``;
-        
-        setConfigDisplay(matchesSearchValue,config);
-    }
-}
+        const collapsed = collapsedGroups[group.source.id] === true;
 
-const openEditItemPage = (name) => {
+        list.append(createGroupHeader({
+            name: group.source.name || `Untitled source`,
+            count: group.templates.length,
+            collapsible: true,
+            collapsed: collapsed,
+            onToggle: () => toggleGroup(group.source.id)
+        }));
 
-    chrome.tabs.create({
-        url: `/pages/team-saved-replies-form/team-saved-replies-form.html?name=${name}`
-    });
-}
+        if (collapsed) {
+            continue;
+        }
 
-const openAddItemPage = async () => {
+        for (const template of group.templates) {
 
-    //open a tab to create a new shared saved reply
-    chrome.tabs.create({
-        url: `/pages/team-saved-replies-form/team-saved-replies-form.html`
-    })
-}
-
-const deleteItem = async (name) => {
-    let confirmation = window.confirm(`Do you want to delete the ${name} save replies?`);
-
-    if (confirmation === false) {
-        return;
-    }
-
-    let configKey = `${name}-config`;
-
-    await chrome.storage.local.remove([configKey]);
-
-    let config = configs.find((config) => config.name === name);
-
-    hideConfig(config);
-
-    configs = configs.filter((config) => config.name !== name);
-
-    await showNoRepliesIfNoConfigs();
-}
-
-const navigateToTeamSavedReplies = async (url) => {
-
-    chrome.tabs.create({
-        url: url
-    })
-}
-
-const loadItems = async () => {
-
-    configs = await getTeamSavedReplyConfigurationsFromLocalStorage();
-
-    const configButtonsContainer = document.querySelector(`.saved-replies-list > div`);
-
-    if (!arrayIsEmpty(configs)) {
-
-        for (const config of configs) {
-
-            const configButtonElement = createConfigButton(config);
-
-            const openSavedRepliesButtonElement = configButtonElement.querySelector(`.saved-replies-button`);
-
-            openSavedRepliesButtonElement.addEventListener(`click`,
-                async () => await navigateToTeamSavedReplies(config.url));
-
-            const editItemButton = configButtonElement.querySelector(`.saved-replies-edit-button`);
-
-            editItemButton.addEventListener(`click`,
-                async () => await openEditItemPage(config.name));
-
-            const deleteItemButton = configButtonElement.querySelector(`.saved-replies-delete-button`);
-
-            deleteItemButton.addEventListener(`click`,
-                async () => await deleteItem(config.name));
-
-            configButtonsContainer.appendChild(configButtonElement);
+            list.append(createTemplateRow({
+                template: template,
+                onActivate: (activated, label) => copyTemplate(activated, label)
+            }));
         }
     }
-
-    showNoRepliesIfNoConfigs();
 }
 
-const initialize = async () => {
-    const addButtons = document.querySelectorAll(`.add-button`);
+const createEmptyPopup = (title, lines) =>
+    createElement(`div`, {
+        children: [
+            createElement(`div`, { children: [title], className: `tsr-empty-title` }),
+            ...lines.map((line) =>
+                createElement(`div`, { children: [line], className: `tsr-empty-hint` }))
+        ],
+        className: `tsr-empty`
+    });
 
-    for(var addButton of addButtons){
+// An empty popup is nearly always a scoping question, so it says which page it
+// looked at and what each configured source wanted instead.
+const explainEmptyPopup = (sources) => {
 
-        addButton.addEventListener(`click`, () => openAddItemPage())
+    if (sources.length === 0) {
+
+        return createEmptyPopup(`No sources configured`, [
+            `Open settings with the gear above to add a templates file.`
+        ]);
     }
-   
-    const searchBox = document.querySelector(`.search`);
 
-    searchBox.addEventListener(`keyup`, (event) => filterItems(event.target.value));
+    if (activeTabUrl === undefined) {
 
-    const settingsLink = document.querySelector(`.inner-footer`);
+        return createEmptyPopup(`Could not read the current tab`, [
+            `Templates are matched against the page you are on, and that page could not be determined.`
+        ]);
+    }
 
-    settingsLink.addEventListener(`click`, async () => await chrome.runtime.openOptionsPage());
+    const reasons = sources
+        .map((source) => explainSourceMismatch(source, activeTabUrl))
+        .filter((reason) => reason !== undefined);
 
-    await loadItems();
+    return createEmptyPopup(`No templates for this page`, [activeTabUrl, ...new Set(reasons)]);
+}
 
-    console.log("loaded popup");
+// A source can apply here and still have nothing cached, which otherwise looks
+// exactly like a scoping miss.
+const explainEmptyGroups = () =>
+    createEmptyPopup(`No templates cached yet`, [
+        `${groups.map((group) => group.source.name || `Untitled source`).join(`, `)} applies to this page but has nothing stored.`,
+        `Open settings and press Sync on the source.`
+    ]);
 
-    await applyCurrentTheme();
+const initialize = async () => {
+
+    activeTabUrl = await getActiveTabUrl();
+
+    groups = await getTemplateGroupsForUrl(activeTabUrl ?? ``);
+
+    collapsedGroups = await getCollapsedGroups();
+
+    searchInsideContent = await getSearchInsideContent();
+
+    const sources = await getSources();
+
+    const popup = document.getElementById(`popup`);
+
+    popup.append(
+        createHeader({
+            subline: describeHeaderSubline(),
+            onOpenOptions: () => chrome.runtime.openOptionsPage()
+        }),
+        createSearchField({
+            placeholder: describeSearchPlaceholder(searchInsideContent),
+            onInput: (value) => { query = value; renderList(); },
+            option: {
+                label: `Also search inside template content`,
+                checked: searchInsideContent,
+                onToggle: async (checked) => {
+                    searchInsideContent = checked;
+                    setSearchPlaceholder(checked);
+                    await saveSearchInsideContent(checked);
+                    renderList();
+                }
+            }
+        }),
+        createElement(`div`, { className: `tsr-list` }),
+        createElement(`div`, {
+            children: [describeMinutesSince(await getLastSyncedAt())],
+            className: `tsr-footer`
+        }));
+
+    const list = document.querySelector(`.tsr-list`);
+
+    if (groups.length === 0) {
+
+        list.append(explainEmptyPopup(sources));
+
+        return;
+    }
+
+    if (groups.every((group) => group.templates.length === 0)) {
+
+        list.append(explainEmptyGroups());
+
+        return;
+    }
+
+    renderList();
 }
 
 initialize();
