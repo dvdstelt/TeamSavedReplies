@@ -92,11 +92,23 @@ fi
 # forward for real. Left unstaged deliberately - committing it is a decision.
 if [ -n "$VERSION" ] && [ "$VERSION" != "$PREVIOUS_VERSION" ]; then
     python3 - "$SOURCE_DIR/manifest.json" "$VERSION" <<'PY'
-import io, json, sys
+import io, json, re, sys
+
 path, version = sys.argv[1], sys.argv[2]
-manifest = json.load(io.open(path, encoding='utf-8'))
-manifest['version'] = version
-io.open(path, 'w', encoding='utf-8', newline='\n').write(json.dumps(manifest, indent=2) + '\n')
+text = io.open(path, encoding='utf-8').read()
+
+# Replaced textually rather than by reloading and dumping the json, which would
+# reformat the whole file and bury a one line change in a rewrite of it.
+updated, count = re.subn(r'("version"\s*:\s*")[^"]*(")',
+                         lambda m: m.group(1) + version + m.group(2), text, count=1)
+
+if count != 1:
+    sys.exit(f"could not find a version to update in {path}")
+
+io.open(path, 'w', encoding='utf-8', newline='').write(updated)
+
+if json.loads(updated)['version'] != version:
+    sys.exit(f"version was not applied to {path}")
 PY
     printf 'version  : %s -> %s (manifest.json updated, not staged)\n' "$PREVIOUS_VERSION" "$VERSION"
 fi
