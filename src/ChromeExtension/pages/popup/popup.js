@@ -24,7 +24,7 @@ const copyTemplate = async (template, label) => {
 
         flashRowLabel(label, `Copied`);
 
-        await pushRecentlyUsed(template.id);
+        await recordTemplateUsed(template.id);
     }
     catch (error) {
 

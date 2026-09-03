@@ -3,9 +3,11 @@ const SETTINGS_KEY = `settings`;
 const RECENTLY_USED_KEY = `recentlyUsed`;
 const COLLAPSED_GROUPS_KEY = `collapsedGroups`;
 const SEARCH_INSIDE_CONTENT_KEY = `searchInsideContent`;
+const USAGE_COUNTS_KEY = `usageCounts`;
 const EDGE_TAB_POSITION_KEY = `edgeTabPosition`;
 
 const DEFAULT_REFRESH_RATE_IN_MINUTES = 30;
+const DEFAULT_INLINE_TRIGGER = `!!`;
 const RECENTLY_USED_LIMIT = 3;
 
 const repliesKeyFor = (sourceId) => `replies:${sourceId}`;
@@ -34,7 +36,9 @@ const getGlobalSettings = async () => {
     return {
         refreshRateInMinutes:
             Number(settings.refreshRateInMinutes) || DEFAULT_REFRESH_RATE_IN_MINUTES,
-        showEdgeTab: settings.showEdgeTab ?? true
+        showEdgeTab: settings.showEdgeTab ?? true,
+        inlineMenuEnabled: settings.inlineMenuEnabled ?? true,
+        inlineTrigger: settings.inlineTrigger || DEFAULT_INLINE_TRIGGER
     };
 }
 
@@ -143,7 +147,9 @@ const saveGlobalSettings = async (settings) => {
     await chrome.storage.local.set({
         [SETTINGS_KEY]: {
             refreshRateInMinutes: Number(settings.refreshRateInMinutes) || DEFAULT_REFRESH_RATE_IN_MINUTES,
-            showEdgeTab: settings.showEdgeTab ?? true
+            showEdgeTab: settings.showEdgeTab ?? true,
+            inlineMenuEnabled: settings.inlineMenuEnabled ?? true,
+            inlineTrigger: settings.inlineTrigger || DEFAULT_INLINE_TRIGGER
         }
     });
 }
@@ -275,4 +281,44 @@ const getSearchInsideContent = async () => {
 const saveSearchInsideContent = async (searchInsideContent) => {
 
     await chrome.storage.local.set({ [SEARCH_INSIDE_CONTENT_KEY]: searchInsideContent === true });
+}
+
+const getUsageCounts = async () => {
+
+    const result = await chrome.storage.local.get([USAGE_COUNTS_KEY]);
+
+    return result[USAGE_COUNTS_KEY] ?? {};
+}
+
+// Recency and frequency answer different questions: the panel shows what you
+// just used, the inline menu ranks by what you reach for most.
+const recordTemplateUsed = async (templateId) => {
+
+    const counts = await getUsageCounts();
+
+    counts[templateId] = (counts[templateId] ?? 0) + 1;
+
+    await chrome.storage.local.set({ [USAGE_COUNTS_KEY]: counts });
+
+    return await pushRecentlyUsed(templateId);
+}
+
+// Prefix matches first, because typing the start of a name should land on it,
+// then whatever has been used most, then alphabetically so the order is stable.
+const rankTemplates = (templates, query, usageCounts) => {
+
+    const needle = (query ?? ``).toLowerCase();
+
+    return templates
+        .filter((template) => template.name.toLowerCase().includes(needle))
+        .map((template) => ({
+            template: template,
+            prefix: template.name.toLowerCase().startsWith(needle) ? 0 : 1,
+            uses: usageCounts[template.id] ?? 0
+        }))
+        .sort((left, right) =>
+            left.prefix - right.prefix
+            || right.uses - left.uses
+            || left.template.name.localeCompare(right.template.name))
+        .map((ranked) => ranked.template);
 }

@@ -50,7 +50,7 @@ const applyTemplate = async (template, label) => {
 
     flashRowLabel(label, inserted ? `Inserted` : `Copied`);
 
-    recentlyUsedIds = await pushRecentlyUsed(template.id);
+    recentlyUsedIds = await recordTemplateUsed(template.id);
 
     // Re-rendering now would replace the row that is still showing its label, so
     // the Recently used section is refreshed once the label has run its course.
