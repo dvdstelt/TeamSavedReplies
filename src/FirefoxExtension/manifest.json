@@ -66,6 +66,7 @@
         "js/sidepanel.js",
         "js/events.js",
         "js/can-load-saved-replies.js",
+        "pages/content-script/status-update-carry-over.js",
         "pages/content-script/content-script-copy-saved-reply-element.js",
         "pages/content-script/content-script-urls.js",
         "pages/content-script/content-script-messaging.js",
