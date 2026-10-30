@@ -38,6 +38,20 @@ let workingSettings = { refreshRateInMinutes: DEFAULT_REFRESH_RATE_IN_MINUTES, s
 const stripGitHubPrefix = (value) =>
     value.replace(/^https?:\/\/github\.com\//i, ``).replace(/\/$/, ``);
 
+// The owner of the repository holding the templates, or empty when the URL is not
+// a GitHub one.
+const ownerOfTemplatesUrl = (value) => {
+
+    try {
+        const url = new URL(value.trim());
+
+        return /^(www\.)?github\.com$/i.test(url.hostname) ? url.pathname.split(`/`)[1] ?? `` : ``;
+    }
+    catch (error) {
+        return ``;
+    }
+}
+
 const describeSyncStatus = (status) => {
 
     if (status === undefined) {
@@ -234,7 +248,18 @@ const createScopeBlock = (source) => {
         ],
         value: source.scope,
         compact: true,
-        onChange: (value) => { source.scope = value; render(); }
+        onChange: (value) => {
+
+            source.scope = value;
+
+            // Templates usually live in the organization they are for, so its
+            // name is taken from the templates URL. An owner already typed stays.
+            if (value === `orgs` && !source.owner) {
+                source.owner = ownerOfTemplatesUrl(source.url);
+            }
+
+            render();
+        }
     });
 
     const children = [
