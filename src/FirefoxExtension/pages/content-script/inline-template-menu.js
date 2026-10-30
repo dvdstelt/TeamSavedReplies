@@ -197,6 +197,8 @@ const acceptInlineMenuOption = async (index) => {
 
     replaceRangeInTextarea(textarea, start, caret, template.body);
 
+    carryOverStatusUpdateProgress(textarea, start, template.body);
+
     await recordTemplateUsed(template.id);
 
     inlineMenuUsageCounts = await getUsageCounts();

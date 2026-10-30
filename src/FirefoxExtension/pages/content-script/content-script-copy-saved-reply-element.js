@@ -61,7 +61,12 @@ const insertReplyIntoTextarea = (body) => {
     );
     if (!textarea) return false;
 
-    return replaceRangeInTextarea(textarea, textarea.selectionStart, textarea.selectionEnd, body);
+    const start = textarea.selectionStart;
+    const inserted = replaceRangeInTextarea(textarea, start, textarea.selectionEnd, body);
+
+    carryOverStatusUpdateProgress(textarea, start, body);
+
+    return inserted;
 };
 
 const closeSavedRepliesDialog = () => {
